@@ -16,3 +16,4 @@ clean:
 	*.out \
 	*.synctex.gz \
 	*.toc
+	*.tex~
