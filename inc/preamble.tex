@@ -113,27 +113,27 @@
 \addto\captionsrussian{\renewcommand{\figurename}{Рисунок}}
 
 % Пользовательские функции
-\newcommand{\addimg}[3]{ % Добавление одного рисунка
+\newcommand{\addimg}[4]{ % Добавление одного рисунка
     \begin{figure}
         \centering
         \includegraphics[width=#2\linewidth]{#1}
-        \caption{#3}
+        \caption{#3} \label{#4}
     \end{figure}
 }
-\newcommand{\addimghere}[3]{ % Добавить рисунок непосредственно в это место
+\newcommand{\addimghere}[4]{ % Добавить рисунок непосредственно в это место
     \begin{figure}[H]
         \centering
         \includegraphics[width=#2\linewidth]{#1}
-        \caption{#3}
+        \caption{#3} \label{#4}
     \end{figure}
 }
-\newcommand{\addtwoimghere}[4]{ % Вставка двух рисунков
+\newcommand{\addtwoimghere}[5]{ % Вставка двух рисунков
     \begin{figure}[H]
         \centering
         \includegraphics[width=#2\linewidth]{#1}
         \hfill
         \includegraphics[width=#3\linewidth]{#2}
-        \caption{#4}
+        \caption{#4} \label{#5}
     \end{figure}
 }
 
