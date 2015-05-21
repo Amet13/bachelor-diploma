@@ -23,6 +23,7 @@
 \usepackage{enumerate} % Тонкая настройка списков
 \usepackage{indentfirst} % Красная строка после заголовка
 \usepackage{float} % Расширенное управление плавающими объектами
+\usepackage{multirow} % Сложные таблицы
 
 % Пути к каталогам с изображениями
 \usepackage{graphicx} % Вставка картинок и дополнений
@@ -111,7 +112,8 @@
 % Формат подрисуночных надписей
 \RequirePackage{caption}
 \DeclareCaptionLabelSeparator{defffis}{ -- }
-\captionsetup{justification=centering, labelsep=defffis, format=plain}
+\captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Подпись рисунка по центру
+\captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Подпись таблицы слева
 \addto\captionsrussian{\renewcommand{\figurename}{Рисунок}}
 
 % Пользовательские функции
