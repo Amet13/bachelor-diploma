@@ -4,17 +4,17 @@
 Во всей инфраструктуре на физических серверах первого дата-центра располагаются:
 \begin{itemize}
   \item shared-хостинг (10.0.0.100);
-  \item виртуализация OpenVZ (10.0.0.200);
-  \item виртуализация KVM (10.0.0.300);
-  \item сервер резервного копирования (10.0.0.400);
-  \item физические сервера клиентов (10.0.0.500 --- 10.0.0.700).
+  \item виртуализация OpenVZ (10.0.1.100);
+  \item виртуализация KVM (10.0.2.100);
+  \item сервер резервного копирования (10.0.3.100);
+  \item физические сервера клиентов (10.0.4.100 --- 10.0.4.200).
 \end{itemize}
 
 В свою очередь некоторые важные сервисы инфраструктуры располагаются на виртуальных машинах, такие как:
 \begin{itemize}
-  \item сервер биллинга (10.0.0.201), OpenVZ;
-  \item сервер управления IP-адесами (10.0.0.301), KVM;
-  \item сервер DNS 1 (10.0.0.302), KVM.
+  \item сервер биллинга (10.0.1.101), OpenVZ;
+  \item сервер управления IP-адесами (10.0.2.101), KVM;
+  \item сервер DNS 1 (10.0.2.102), KVM.
 \end{itemize}
 
 Сервер мониторинга и сервер DNS 2 располагаются в виртуальных машинах KVM в другом дата-центре.
@@ -522,5 +522,153 @@ CT configuration saved to /etc/vz/conf/103.conf
 \end{lstlisting}
 
 \subsection{Сервер виртуализации KVM}
+
+В целом, администрирование KVM-ноды не отличается многим от OpenVZ.
+Однако в случае OpenVZ, возможно получить доступ к пользовательскому контейнеру непосредственно с хост-ноды, в случае с KVM это невозможно, это следует учесть при работе с пользователем.
+Изменение размера диска также является нетривиальной задачей, высок риск краха всей файловой системы без возможности восстановления данных.
+
+Команды, которые чаще всего используются при администрировании виртуальных машин на базе KVM:
+\begin{lstlisting}
+VM listing:
+# virsh list --all
+VM start:
+# virsh start win_templ
+VM shutdown:
+# virsh shutdown win_templ
+# virsh destroy win_templ
+VM destroy:
+# virsh undefine win_templ
+VM enable autostart:
+# virsh autostart win_templ
+VM disable autostart:
+# virsh autostart --disable win_templ
+Update VM info:
+# virsh define /etc/libvirt/qemu/win_templ.xml
+VNC port:
+#virsh vncdisplay win_templ
+# virsh dumpxml win_templ | grep vnc
+\end{lstlisting}
+
+Для защиты сервера от брутфорса пароля SSH на серверах OpenVZ и KVM используется fail2ban.
+Установка (в CentOS 6, для установки fail2ban нужно подключить репозиторий EPEL):
+\begin{lstlisting}
+# rpm -ivh http://download.fedoraproject.org/pub/epel/6/$(arch)/epel-release-6-8.noarch.rpm
+# yum install fail2ban
+\end{lstlisting}
+
+fail2ban блокирует на некоторое время с помощью IPTables активные адреса, которые пытаются соединиться по SSH после пяти неудачных попыток, также отправляет администратору письмо с уведомлением о блокировке:
+\begin{lstlisting}
+# cat /etc/fail2ban/jail.local
+...
+[ssh-iptables]
+enabled = true
+filter = sshd
+action = iptables[name=SSH, port=ssh, protocol=tcp]
+sendmail-whois[name=SSH, dest=admin@domain.com, sender=fail2ban@example.com, sendername="Fail2Ban"]
+maxretry = 5
+bantime = 86400
+\end{lstlisting}
+
+Разблокировать IP адрес из бана:
+\begin{lstlisting}
+# fail2ban-client set JAIL unbanip IP
+\end{lstlisting}
+
+Пример:
+\begin{lstlisting}
+# fail2ban-client set ssh-iptables unbanip 10.0.0.111
+\end{lstlisting}
+
+\subsection{Второстепенные сервера}
+
+В качестве сервера мониторинга используется Nagios, для построения графиков --- Munin.
+Дополнительной настройки этих сервисов не требуется.
+Добавление новых хостов происходит вручную, требуется лишь править адреса и сервисы, которые требуется мониторить.
+
+Важно мониторить свободное место на жестком диске сервера резервного копирования и вовремя очищать старые резервные копии.
+
+В DNS серверах используется master-slave репликация, причем один из DNS-серверов, равно как и сервер мониторинга расположены в другом дата-центре для обеспечения отказоустойчивости системы.
+Также между slave-серверами настроена балансировка нагрузки.
+
+\subsection{Общие рекомендации по администрированию инфраструктуры}
+
+Следует следить за новостными рассылками о критических уязвимостях в операционной системе и используемом программном обеспечении.
+
+Если работа сервера замедлилась, в диагностике проблемы помогут утилиты ps, top, atop, htop.
+В случае обнаружения сетевых проблем на помощью придут утилиты ping, traceroute, nmap, mtr, tcpdump, iftop.
+
+Важно следить за состоянием RAID на сервере, в случае сбоя одного из дисков, следует обратиться к поддержке дата-центра с просьбой о замене диска.
+
+Не следует просто так перезагружать сервер, рекомендуется это делать только в случаях если совсем ничего не помогает.
+
+Стоит незамедлительно реагировать на DDoS-атаки, при обнаружении подозрительного трафика следует убедиться, что это действительно DDoS, а также поинтересоваться у дата-центра реакцию сетевого оборудования на нее.
+
+Всегда проверять наличие актуальных резервных копий, свободного места на жестких дисках.
+Стоит также настроить ротацию логов, чтобы не занималось лишнее место на сервере.
+
+На физических нодах стоит устанавливать только самый необходимый минимальный набор программного обеспечения, для уменьшения вероятности компрометации сервера.
+
+Всегда стоит вести документацию в том или ином виде и логировать свои действия на сервере.
+
+В случае обнаружения неполадок с аппаратной частью, стоит незамедлительно обратиться к своему провайдеру для проверки работоспособности аппаратуры.
+В случае недочетов в программном обеспечении стоит обратиться к технической поддержке ПО.
+
+Быстрое удаление правила iptables по его номеру.
+Вывод правил цепочки INPUT с указанием номеров:
+\begin{lstlisting}
+# iptables -L INPUT --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    DROP       tcp  --  anywhere             anywhere             tcp dpt:http STRING match  "/forbot" ALGO name kmp TO 65535
+2    DROP       tcp  --  anywhere             anywhere             tcp dpt:http STRING match  "/tobot" ALGO name kmp TO 65535
+3    DROP       tcp  --  anywhere             anywhere             tcp dpt:http STRING match  "save" ALGO name kmp TO 65535
+\end{lstlisting}
+
+Удаление правила с указанным номером:
+\begin{lstlisting}
+# iptables -D INPUT num
+\end{lstlisting}
+
+
+Восстановление пароля MySQL.
+Останавливаем службу MySQL:
+\begin{lstlisting}
+# service mysql stop
+\end{lstlisting}
+
+Запускаем службу с опцией -{}-skip-grant-tables:
+\begin{lstlisting}
+# mysqld_safe --skip-grant-tables &
+[1] 6518
+Starting mysqld daemon with databases from /var/lib/mysql
+mysqld_safe[5722]: started
+\end{lstlisting}
+
+Подключаемся с серверу MySQL при помощи клиента mysql:
+\begin{lstlisting}
+# mysql -u root
+mysql>
+\end{lstlisting}
+
+Вводим новый пароль для root:
+\begin{lstlisting}
+mysql> use mysql;
+mysql> update user set password=PASSWORD("NEW-PASS") where User='root';
+mysql> flush privileges;
+mysql> quit
+\end{lstlisting}
+
+Останавливаем сервер MySQL:
+\begin{lstlisting}
+# service mysql stop
+\end{lstlisting}
+
+Запускаем MySQL-сервер и логинимся с новым паролем:
+\begin{lstlisting}
+# service mysql start
+# mysql -u root -p
+Enter password: NEW-PASS
+\end{lstlisting}
+
 
 \clearpage
