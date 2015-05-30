@@ -1,3 +1,193 @@
 \section{Руководство администратора}
 
+\subsection{Расположение серверов в сетевой инфраструктуре}
+Во всей инфраструктуре на физических серверах первого дата-центра располагаются:
+\begin{itemize}
+  \item shared-хостинг (10.0.0.100);
+  \item виртуализация OpenVZ (10.0.0.200);
+  \item виртуализация KVM (10.0.0.300);
+  \item сервер резервного копирования (10.0.0.400);
+  \item физические сервера клиентов (10.0.0.500 --- 10.0.0.700).
+\end{itemize}
+
+В свою очередь некоторые важные сервисы инфраструктуры располагаются на виртуальных машинах, такие как:
+\begin{itemize}
+  \item сервер биллинга (10.0.0.201), OpenVZ;
+  \item сервер управления IP-адесами (10.0.0.301), KVM;
+  \item сервер DNS 1 (10.0.0.302), KVM.
+\end{itemize}
+
+Сервер мониторинга и сервер DNS 2 располагаются в виртуальных машинах KVM в другом дата-центре.
+Сервер shared-хостинга выполняет роль главного (master) DNS-сервера.
+
+\subsection{Сервер shared-хостинга}
+
+Сервер shared-хостинга является самым уязвимым местом всей инфраструктуры из-за большого количества и плотности клиентов на сервере.
+Распределение ресурсов происходит за счет встроенных в ядро Linux механизмов.
+
+На сервере установлен и настроен веб-сервер в составе следующего ПО:
+\begin{itemize}
+  \item роль http-сервера выполняет связка между Apache HTTP Server, кэширующего и проксирующего http-сервера nginx и обработчика динамических запросов php-fpm;
+  \item memcached кэширует динамические запросы в оперативной памяти;
+  \item роли серверов баз данных выполняют MySQL и PostgreSQL.
+\end{itemize}
+
+nginx принимает запросы к серверу с порта 80 и решает каким образом обрабатывать запрос, если это запрос на получение статического файла, то nginx сам его обрабатывает и в случае необходимости кэширует.
+Если же запрашивается динамическое содержимое, то nginx передает запрос на бэкенд, где его, в зависимости от настройки виртуального хоста сайта обрабатывает либо php-fpm, либо встроенный модуль Apache mod\_php.
+nginx не может кэшировать динамические запросы, поэтому для этого имеется memcached, который работает в связке с Apache и позволяет кэшировать динамические запросы.
+Для правильной работы Apache с memcached необходима установка модуля PHP php5-memcached:
+\begin{lstlisting}
+# apt-get install php5-memcached
+\end{lstlisting}
+
+В качестве связки для работы почты выступает SMTP-сервер Exim Internet Mailer, запросы по протоколам POP3 и IMAP принимает Dovecot.
+В качестве антиспам-связки выступает Postgrey, Spamassasin, ClamAV и OpenDKIM.
+
+ProFTPd необходим для работы пользователей по протоколу FTP.
+
+Сервер управления временем NTP обращается к следующим серверам за уточнением времени на сервере:
+\begin{lstlisting}
+# cat /etc/ntp.conf | grep ^server | awk '{print $2}'
+0.debian.pool.ntp.org
+1.debian.pool.ntp.org
+2.debian.pool.ntp.org
+3.debian.pool.ntp.org
+\end{lstlisting}
+
+Конфигурация SSH требует отдельного пояснения.
+Доступ к SSH по стандартному порту закрыт, это позволяет избавиться от большинства злоумышленников, которые пытаются скомпрометировать пароль доступа к серверу.
+Также запрещен вход от пользователя root, для этого создан отдельный пользователь.
+Также можно ограничить доступ к серверу по SSH, оставив только доверенные адреса или подсети адресов.
+\begin{lstlisting}
+Adding user for SSH:
+# useradd sshuser
+# passwd sshuser
+SSH config:
+# cat /etc/ssh/sshd_config
+#change SSH port 222:
+Port 222
+#close root login:
+PermitRootLogin yes
+#allow IP-addresses:
+Match host 10.0.0.111, 10.0.0.222
+  #root for allowed IP's:
+  PermitRootLogin yes
+Restart SSH:
+# service ssh restart
+\end{lstlisting}
+
+Разрешен вход на сервер по ключам:
+\begin{lstlisting}
+Key Generating:
+user@10.0.0.111~$ ssh-keygen
+user@10.0.0.111~$ ssh-keygen -p
+Copy private key to server:
+user@10.0.0.111~$ ssh-copy-id -p 222 root@10.0.0.100
+Reconnect to server:
+user@10.0.0.111~$ ssh -p 222 root@10.0.0.100
+\end{lstlisting}
+
+Резервные копии с сервера делаются средствами панели ISPmanager в ночное время, применяется инкрементальный метод резервного копирования, когда сначала делается полная копия, а затем инкрементальные копии только измененных данных.
+
+На сервере функционирует скрипт блокировки адресов, которые слишком часто подбирают пароли доступа к панели администратора наиболее популярных CMS, таких как WordPress и Joomla.
+Скрипт находится в открытом доступе и имеет простое использование:
+\begin{lstlisting}
+# cat /etc/nginx/blockips.sh
+#!/bin/bash
+# admin@amet13.name
+# v0.2 30.06.2014
+command=$(cat /var/log/nginx/access.log | \
+grep "administrator/index.php \|wp-login.php " | \
+cut -f1 -d " " | sort | \
+uniq -c | sort -n | \
+awk '{ if ($1 > 2999) print $2}')
+# Add new ip's to database
+for word in $command; do
+   # Is that ip already in database?
+   grep $word /etc/nginx/blockips.conf > /dev/null
+   if (( $? )); then 
+      sed -i "s/allow all;/deny $word;\nallow all;/" \
+      /etc/nginx/blockips.conf
+   fi
+done
+exit 0
+\end{lstlisting}
+
+Основные конфигурации настроек веб-сервера хранятся в:
+\begin{lstlisting}
+/etc/nginx/nginx.conf
+/etc/apache2/apache2.conf
+/etc/php5/{apache2,cgi,cli,fpm}/php.ini
+/etc/mysql/my.cnf
+/etc/postgresql/9.1/main/postgresql.conf
+\end{lstlisting}
+
+Для сканирования уязвимостей на сайтах клиентов используется утилита maldet, которая находит подозрительные файлы в системе и составляет отчет по найденным файлам.
+Принцип пользования утилитой:
+\begin{lstlisting}
+Instalaltion:
+# cd /tmp/
+# wget http://www.rfxn.com/downloads/maldetect-current.tar.gz
+# tar xfz maldetect-current.tar.gz
+# cd maldetect-*
+# ./install.sh
+Run scanning (-b -- background mode):
+# maldet -b --scan-all /var/www/
+Show reports list:
+# maldet --report list
+Report view:
+# maldet --report 021715-1414.3266
+Send infected files to quarantine:
+# maldet -q 021715-1414.3266
+\end{lstlisting}
+
+На сервере shared-хостинга в сайтах пользователей большое количество уязвимостей, которые часто используются для рассылки спама с сервера.
+Для обнаружения большого числа рассылок с сервера написан плагин для системы мониторинга Nagios, который контролирует число писем в почтовой очереди, а также проверяет наиболее популярные организации, которые собирают данные о спам-серверах.
+
+Для просмотра списка очереди используется команда exim -bp или mailq.
+Таким образом можно просмотреть количество писем для разных доменов и их количество:
+\begin{lstlisting}
+# exim -bp | exiqsumm -c -s | head -10
+Count  Volume  Oldest  Newest  Domain
+-----  ------  ------  ------  ------
+12151  1378KB     14h      0m  spamsite.ru > host.ru
+   93   264KB     14h      5m  spamsite.ru > gmail.com
+   16   154KB     13h     11h  site.ru > kk.com
+    8    77KB     13h     11h  site.ru > ww.com
+...
+\end{lstlisting}
+
+В данном случае очевидна рассылка писем с сайта spamsite.ru.
+Посмотреть ID письма а также содержимое заголовков и тела письма можно командами:
+\begin{lstlisting}
+# exiqgrep -b -f 'spamsite.ru' | head -1
+1YyRgs-0000zD-Qy From: <fobos@spamsite.ru> To: maria@host.ru
+# exim -Mvh 1YyRgs-0000zD-Qy
+# exim -Mvb 1YyRgs-0000zD-Qy
+\end{lstlisting}
+
+Если сайт действительно заражен, то следует отключить его, оповестить пользователя о закрытии сайта и необходимости избавиться от вредоносного кода и удалить очередь сообщений из этих писем:
+\begin{lstlisting}
+# exiqgrep -b -f 'spamsite.ru' | awk '{print $1}' | xargs exim -Mrm
+\end{lstlisting}
+
+В случае неработоспособности панели ISPmanager 5 возможна ее перезагрузка:
+\begin{lstlisting}
+# pgrep -l core
+4437 core
+7129 core
+21194 core
+# killall core
+\end{lstlisting}
+
+Обновление компонентов системы:
+\begin{lstlisting}
+# apt-get update
+# apt-get upgrade
+\end{lstlisting}
+
+\subsection{Сервер виртуализации OpenVZ}
+
+
+
 \clearpage

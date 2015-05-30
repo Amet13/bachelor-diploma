@@ -4,7 +4,13 @@
 \usepackage{xunicode} % Unicode для XeTeX
 \usepackage{xltxtra}  % Верхние и нижние индексы
 \usepackage{pdfpages} % Вставка PDF
-\usepackage{verbatimbox} % Оформление исходного кода
+
+\usepackage{listings} % Оформление исходного кода
+\lstset{
+basicstyle=\small\ttfamily,
+columns=flexible,
+breaklines=true
+}
 
 % Шрифты, xelatex
 \defaultfontfeatures{Ligatures=TeX}
