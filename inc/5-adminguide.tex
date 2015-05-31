@@ -482,7 +482,7 @@ Container start in progress...
 # vzctl exec 101 chmod 600 /dev/net/tun
 \end{lstlisting}
 
-Для пользователей в контейнерах доступен файерволл IPTables, для его работы в файле /etc/vz/vz.conf должна присутствовать строка:
+Для пользователей в контейнерах доступен брандмауэр IPTables, для его работы в файле /etc/vz/vz.conf должна присутствовать строка:
 \begin{lstlisting}
 IPTABLES="ipt_owner ipt_REDIRECT ipt_recent ip_tables iptable_filter iptable_mangle ipt_limit ipt_multiport ipt_tos ipt_TOS ipt_REJECT ipt_TCPMSS ipt_tcpmss ipt_ttl ipt_LOG ipt_length ip_conntrack ip_conntrack_ftp ipt_state iptable_nat ip_nat_ftp"
 \end{lstlisting}
