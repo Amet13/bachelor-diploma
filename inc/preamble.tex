@@ -38,7 +38,7 @@ keepspaces=true
 
 % Пути к каталогам с изображениями
 \usepackage{graphicx} % Вставка картинок и дополнений
-\graphicspath{{images/}{extra/}}
+\graphicspath{{images/}{images/userguide/}{extra/}}
 
 % Формат подрисуночных записей
 \usepackage{chngcntr}
@@ -140,6 +140,13 @@ keepspaces=true
         \hfill
         \includegraphics[width=#3\linewidth]{#2}
         \caption{#4} \label{#5}
+    \end{figure}
+}
+\newcommand{\addimgapp}[2]{ % Это костыль для приложения Б
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{#1}
+        \caption*{#2}
     \end{figure}
 }
 
