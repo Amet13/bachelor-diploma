@@ -97,7 +97,7 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[R]{\thepage}
+\fancyhead[R]{\textrm{\thepage}}
 \fancyheadoffset{0mm}
 \fancyfootoffset{0mm}
 \setlength{\headheight}{17pt}
@@ -105,7 +105,8 @@
 \renewcommand{\footrulewidth}{0pt}
 \fancypagestyle{plain}{ 
     \fancyhf{}
-    \rhead{\thepage}}
+    \rhead{\thepage}
+}
 
 % Формат подрисуночных надписей
 \RequirePackage{caption}
