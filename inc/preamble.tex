@@ -7,14 +7,9 @@
 
 \usepackage{listings} % Оформление исходного кода
 \lstset{
-basicstyle=\small\ttfamily,
-columns=fullflexible,
-flexiblecolumns,
-breaklines=true,
-tabsize=2,
-inputencoding=utf8x,
-extendedchars=\true,
-keepspaces=true
+    basicstyle=\small\ttfamily, % Размер и тип шрифта
+    breaklines=true, % Перенос строк
+    tabsize=2 % Размер табуляции
 }
 
 % Шрифты, xelatex
@@ -22,7 +17,7 @@ keepspaces=true
 \setmainfont{Times New Roman} % Нормоконтроллеры хотят именно его
 \newfontfamily\cyrillicfont{Times New Roman}
 %\setsansfont{Liberation Sans} % Тут я его не использую, но если пригодится...
-\setmonofont{FreeMono} % Моноширинный шрифты для оформления кода
+\setmonofont{FreeMono} % Моноширинный шрифт для оформления кода
 
 % Русский язык
 \usepackage{polyglossia}
@@ -50,15 +45,15 @@ keepspaces=true
     colorlinks, urlcolor={black}, % Все ссылки черного цвета, кликабельные
     linkcolor={black}, citecolor={black},
     pdfauthor={Амет Умеров},
-    pdftitle={Разработка виртуальной инфраструктуры для реализации облачных услуг},
+    pdftitle={Разработка виртуальной инфраструктуры для реализации облачных услуг}
 }
 
 % Оформление библиографии и подрисуночных записей через точку
 \makeatletter
 \renewcommand*{\@biblabel}[1]{\hfill#1.}
 \renewcommand*\l@section{\@dottedtocline{1}{1em}{1em}}
-\renewcommand{\thefigure}{\thesection.\arabic{figure}}  % Формат рисунка секция.номер
-\renewcommand{\thetable}{\thesection.\arabic{table}}    % Формат таблицы секция.номер
+\renewcommand{\thefigure}{\thesection.\arabic{figure}} % Формат рисунка секция.номер
+\renewcommand{\thetable}{\thesection.\arabic{table}} % Формат таблицы секция.номер
 \def\redeflsection{\def\l@section{\@dottedtocline{1}{0em}{10em}}}
 \makeatother
 
@@ -84,10 +79,10 @@ keepspaces=true
 \makeatletter
     \AddEnumerateCounter{\asbuk}{\@asbuk}{м)}
 \makeatother
-\setlist{nolistsep}
-\renewcommand{\labelitemi}{--}
-\renewcommand{\labelenumi}{\asbuk{enumi})}
-\renewcommand{\labelenumii}{\arabic{enumii})}
+\setlist{nolistsep} % Нет отступо между пунктами списка
+\renewcommand{\labelitemi}{--} % Маркет списка --
+\renewcommand{\labelenumi}{\asbuk{enumi})} % Список второго уровня
+\renewcommand{\labelenumii}{\arabic{enumii})} % Список третьего уровня
 
 % Содержание
 \usepackage{tocloft}
@@ -113,10 +108,10 @@ keepspaces=true
 
 % Формат подрисуночных надписей
 \RequirePackage{caption}
-\DeclareCaptionLabelSeparator{defffis}{ -- }
+\DeclareCaptionLabelSeparator{defffis}{ -- } % Разделитель
 \captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Подпись рисунка по центру
 \captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Подпись таблицы слева
-\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}}
+\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}} % Имя фигуры
 
 % Пользовательские функции
 \newcommand{\addimg}[4]{ % Добавление одного рисунка
@@ -196,4 +191,4 @@ keepspaces=true
     }
 \makeatother
 
-\setcounter{page}{1} % Начало нумерации страниц
+\setcounter{page}{3} % Начало нумерации страниц

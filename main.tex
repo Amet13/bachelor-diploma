@@ -1,6 +1,7 @@
 %!TEX TS-program = xelatex
 
 % Author: Amet Umerov (admin@amet13.name)
+% https://github.com/Amet13/bachelor-diploma
 
 \documentclass[a4paper,14pt]{extarticle} % 14й шрифт
 \input{inc/preamble} % Подключаем преамбулу
@@ -8,8 +9,8 @@
 %%% Начало документа
 \begin{document}
 
-\includepdf{pz} % Пояснительная записка
-\includepdf[pages={1,2}]{task} % Задание на диплом
+%\includepdf{pz} % Пояснительная записка
+%\includepdf[pages={1,2}]{task} % Задание на диплом печатается на одном листе с двух сторон
 
 \tableofcontents % Содержание 
 \clearpage
@@ -27,9 +28,10 @@
 \input{inc/0-bibliography} % Библиографический список
 
 % Приложения
-\input{inc/a-app} % DDoS Deflate
+\input{inc/a-app} % Исходный код скрипта DDoS Deflate
 \input{inc/b-app} % Руководство пользователя
 
 %\includepdf{act} % Акт внедрения
 
 \end{document}
+%%% Конец документа
