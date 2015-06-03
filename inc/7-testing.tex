@@ -50,7 +50,8 @@
 
 Если взглянуть на вывод команды netstat, то можно заметить наиболее активные адреса:
 \begin{lstlisting}
-# netstat -ntu | awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -rn | grep -v 127.0.0.1 | head
+# netstat -ntu | awk '{print $5}' | cut -d: -f1 | sort | \
+uniq -c | sort -rn | grep -v 127.0.0.1 | head
   22373 209.72.209.54
   17766 88.81.32.224
   16060 176.209.90.198
