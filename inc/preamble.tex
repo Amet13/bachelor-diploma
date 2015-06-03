@@ -79,7 +79,7 @@
 \makeatletter
     \AddEnumerateCounter{\asbuk}{\@asbuk}{м)}
 \makeatother
-\setlist{nolistsep} % Нет отступо между пунктами списка
+\setlist{nolistsep} % Нет отступов между пунктами списка
 \renewcommand{\labelitemi}{--} % Маркет списка --
 \renewcommand{\labelenumi}{\asbuk{enumi})} % Список второго уровня
 \renewcommand{\labelenumii}{\arabic{enumii})} % Список третьего уровня
@@ -162,7 +162,7 @@
 
 % Оформление заголовков
 \usepackage[compact,explicit]{titlesec}
-\titleformat{\section}{}{}{12.5mm}{\centering{\thesection\quad\MakeTextUppercase{#1}}\vspace{2em}}
+\titleformat{\section}{}{}{12.5mm}{\centering{\thesection\quad\MakeTextUppercase{#1}}\vspace{1.5em}}
 \titleformat{\subsection}[block]{}{}{12.5mm}{\thesubsection\quad#1}
 \titleformat{\subsubsection}[block]{\normalsize}{}{12.5mm}{\thesubsubsection\quad#1}
 \titleformat{\paragraph}[block]{\normalsize}{}{12.5mm}{\MakeTextUppercase{#1}}
@@ -170,7 +170,7 @@
 % Секции без номеров (введение, заключение...), вместо section*{}
 \newcommand{\anonsection}[1]{
     \phantomsection % Корректный переход по ссылкам в содержании
-    \paragraph{\centerline{{#1}}}
+    \paragraph{\centerline{{#1}}\vspace{1.5em}}
     \addcontentsline{toc}{section}{\uppercase{#1}}
 }
 
