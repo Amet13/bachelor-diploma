@@ -77,7 +77,7 @@ Match host 10.0.0.111, 10.0.0.222
 # service ssh restart
 \end{lstlisting}
 
-Подключение к серверу по SSH и root-прав:
+Подключение к серверу по SSH и получение root-прав:
 \begin{lstlisting}
 user@10.0.0.111~$ ssh -p 222 sshuser@10.0.0.100
 sshuser@10.0.0.100's password:
@@ -136,7 +136,7 @@ exit 0
 \begin{itemize}
   \item /etc/nginx/nginx.conf;
   \item /etc/apache2/apache2.conf;
-  \item /etc/php5/{apache2,cgi,cli,fpm}/php.ini;
+  \item /etc/php5/\{apache2,cgi,cli,fpm\}/php.ini;
   \item /etc/mysql/my.cnf;
   \item /etc/postgresql/9.1/main/postgresql.conf.
 \end{itemize}
@@ -507,13 +507,14 @@ modprobe fuse
 \end{lstlisting}
 
 Для защиты сервера от брутфорса пароля SSH на серверах OpenVZ и KVM используется fail2ban.
+
 Установка (в CentOS 6, для установки fail2ban нужно подключить репозиторий EPEL):
 \begin{lstlisting}
 # rpm -ivh http://download.fedoraproject.org/pub/epel/6/$(arch)/epel-release-6-8.noarch.rpm
 # yum install fail2ban
 \end{lstlisting}
 
-fail2ban блокирует на некоторое время с помощью IPTables активные адреса, которые пытаются соединиться по SSH после пяти неудачных попыток, также отправляет администратору письмо с уведомлением о блокировке:
+fail2ban блокирует с помощью IPTables на некоторое время активные адреса, которые пытаются соединиться по SSH после пяти неудачных попыток, также отправляет администратору письмо с уведомлением о блокировке:
 \begin{lstlisting}
 # cat /etc/fail2ban/jail.local
 [ssh-iptables]
