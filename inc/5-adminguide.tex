@@ -307,8 +307,8 @@ venet0    Link encap:UNSPEC  HWaddr 00-00-00-00-00-00
           Bcast:0.0.0.0  Mask:255.255.255.255
 --
 venet0:0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00
-          inet addr:10.0.0.210  P-t-P:192.168.0.101  \
-          Bcast:192.168.0.101  Mask:255.255.255.255
+          inet addr:10.0.0.210  P-t-P:10.0.0.210  \
+          Bcast:10.0.0.201  Mask:255.255.255.255
 \end{lstlisting}
 
 Должны присутствовать сетевые интерфейсы:
@@ -353,13 +353,13 @@ root@site:/#
 Для этого можно использовать команду:
 \begin{lstlisting}
 # for i in `vzlist -o veid -H`; do \
-> echo "VPS $i"; vzctl exec $i command; done
+echo "VPS $i"; vzctl exec $i command; done
 \end{lstlisting}
 
 Например можно узнать сколько времени работают все запущенные контейнеры:
 \begin{lstlisting}
 # for i in `vzlist -o veid -H`; do \
-> echo "VPS $i"; vzctl exec $i uptime; done
+echo "VPS $i"; vzctl exec $i uptime; done
 VPS 101
  05:45:01 up 2 min, 0 users, load average: 0.01, 0.02, 0.03
 VPS 102
@@ -398,7 +398,7 @@ Filesystem             Inodes IUsed    IFree IUse% Mounted on
 /dev/mapper/lv_root   3276800 55229  3221571    2% /
 tmpfs                 4101290     1  4101289    1% /dev/shm
 /dev/cciss/c0d0p1      128016    96   127920    1% /boot
-/dev/mapper/vg-lv_vz 32546816   248 32546568    1% /vz
+/dev/mapper/lv_vz    32546816   248 32546568    1% /vz
 \end{lstlisting}
 
 Подключение модуля TUN для контейнера (необходимо для работы OpenVPN).
@@ -407,7 +407,7 @@ tmpfs                 4101290     1  4101289    1% /dev/shm
 # lsmod | grep tun
 \end{lstlisting}
 
-В случае, если он не загружен, загрузить его можно следующей командой:
+В случае, если модуль не загружен:
 \begin{lstlisting}
 # modprobe tun
 # lsmod | grep tun
