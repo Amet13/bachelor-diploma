@@ -15,5 +15,4 @@ clean:
 	*.log \
 	*.out \
 	*.synctex.gz \
-	*.toc \
-	*.tex~
+	*.toc
