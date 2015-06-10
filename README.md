@@ -91,6 +91,6 @@ make clean
 
 Александру Полозову: [habrahabr.ru/post/144648](http://habrahabr.ru/post/144648/)
 
-Руслану Вихрову за исправление ошибок: [defuze.cc.ua](http://defuze.cc.ua)
+[Руслану Вихрову](http://defuze.cc.ua) и Даниилу Велешко за исправление ошибок
 
 Пользователям сайта [www.linux.org.ru](https://www.linux.org.ru/) в решении вопросов, связанных с LaTeX
