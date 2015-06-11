@@ -69,7 +69,7 @@
 % Отступы у страниц
 \usepackage{geometry}
 \geometry{left=3cm}
-\geometry{right=1.5cm}
+\geometry{right=1cm}
 \geometry{top=2cm}
 \geometry{bottom=2cm}
 
@@ -113,7 +113,7 @@
 \DeclareCaptionLabelSeparator{defffis}{ -- } % Разделитель
 \captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Подпись рисунка по центру
 \captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Подпись таблицы слева
-\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}} % Имя фигуры
+\addto\captionsrussian{\renewcommand{\figurename}{Рис.}} % Имя фигуры
 
 % Пользовательские функции
 \newcommand{\addimg}[4]{ % Добавление одного рисунка
@@ -165,8 +165,8 @@
 % Оформление заголовков
 \usepackage[compact,explicit]{titlesec}
 \titleformat{\section}{}{}{12.5mm}{\centering{\thesection\quad\MakeTextUppercase{#1}}\vspace{1.5em}}
-\titleformat{\subsection}[block]{}{}{12.5mm}{\thesubsection\quad#1}
-\titleformat{\subsubsection}[block]{\normalsize}{}{12.5mm}{\thesubsubsection\quad#1}
+\titleformat{\subsection}[block]{\vspace{1em}}{}{12.5mm}{\thesubsection\quad#1\vspace{1em}}
+\titleformat{\subsubsection}[block]{\normalsize}{}{12.5mm}{\thesubsubsection\quad#1\vspace{1em}}
 \titleformat{\paragraph}[block]{\normalsize}{}{12.5mm}{\MakeTextUppercase{#1}}
 
 % Секции без номеров (введение, заключение...), вместо section*{}
@@ -193,4 +193,4 @@
     }
 \makeatother
 
-\setcounter{page}{3} % Начало нумерации страниц
+\setcounter{page}{4} % Начало нумерации страниц
