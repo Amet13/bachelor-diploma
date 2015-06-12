@@ -2,6 +2,8 @@ bachelor-diploma
 ================
 Дипломная работа бакалавра в LaTeX, оформленная в соответствии с нормоконтролем Севастопольского государственного университета
 
+[![PDF Status](https://www.sharelatex.com/github/repos/Amet13/bachelor-diploma/builds/latest/badge.svg)](https://www.sharelatex.com/github/repos/Amet13/bachelor-diploma/)
+
 Особенности
 -----------
 * использование XeTeX, шрифты Times New Roman, 14pt, полуторный межстрочный интервал
