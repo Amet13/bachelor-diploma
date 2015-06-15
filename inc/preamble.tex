@@ -176,6 +176,13 @@
     \addcontentsline{toc}{section}{\uppercase{#1}}
 }
 
+% Секции для приложений
+\newcommand{\appsection}[1]{
+    \phantomsection
+    \paragraph{\centerline{{#1}}}
+    \addcontentsline{toc}{section}{\uppercase{#1}}
+}
+
 % Библиография: отступы и межстрочный интервал
 \makeatletter
 \renewenvironment{thebibliography}[1]
