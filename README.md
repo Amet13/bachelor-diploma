@@ -1,8 +1,6 @@
 bachelor-diploma
 ================
-Дипломная работа бакалавра в LaTeX, оформленная в соответствии с нормоконтролем Севастопольского государственного университета
-
-![PDF Status](https://www.sharelatex.com/github/repos/Amet13/bachelor-diploma/builds/latest/badge.svg)
+Дипломная работа бакалавра в LaTeX, оформленная в соответствии с нормоконтролем Севастопольского государственного университета в 2015 году
 
 Особенности
 -----------
@@ -92,9 +90,7 @@ make clean
 
 Благодарности
 -------------
-Анатолию Смолянинову: [github.com/zarkone/bachelor](https://github.com/zarkone/bachelor)
-
-Александру Полозову: [habrahabr.ru/post/144648](http://habrahabr.ru/post/144648/)
+[Анатолию Смолянинову](https://github.com/zarkone/bachelor) за основу шаблона LaTeX
 
 [Руслану Вихрову](http://defuze.cc.ua), Даниилу Велешко, [Сергею Сивкову](https://github.com/SerjSivkov) за исправление ошибок
 
