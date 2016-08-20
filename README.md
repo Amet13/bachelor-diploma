@@ -66,18 +66,16 @@ bachelor-diploma
 
 Работа с LaTeX
 --------------
-Для работы с LaTeX рекомендую использовать XeLaTeX и IDE [LaTeXila](https://wiki.gnome.org/Apps/LaTeXila).
-
 Как установить LaTeX: http://blog.amet13.name/2014/06/latex.html
 
-Для пользователей GNU/Linux можно воспользоваться Makefile.
-Пример компиляции проекта:
+Как использователь Makefile, пример компиляции проекта:
 ```bash
 git clone https://github.com/Amet13/bachelor-diploma.git
 cd bachelor-diploma/
 make
 ```
-Пример очистки ненужных файлов после компиляции:
+
+Пример очистки сборочных файлов после компиляции (кроме PDF):
 ```bash
 make clean
 ```
