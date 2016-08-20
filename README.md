@@ -68,7 +68,7 @@ bachelor-diploma
 --------------
 Как установить LaTeX: http://blog.amet13.name/2014/06/latex.html
 
-Как использователь Makefile, пример компиляции проекта:
+Пример компиляции проекта с помощью Makefile:
 ```bash
 git clone https://github.com/Amet13/bachelor-diploma.git
 cd bachelor-diploma/
