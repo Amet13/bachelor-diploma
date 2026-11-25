@@ -1,0 +1,7 @@
+/target
+node_modules/
+.DS_Store
+*.aux
+*.log
+*.synctex.gz
+!fixtures/**/*.synctex.gz
