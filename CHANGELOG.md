@@ -31,6 +31,10 @@ the JSON schema is versioned separately (`schema_version` in round files).
   extension (`proofback-vscode.vsix`), both tested before packing, with stable
   "latest" download links. Nothing is published to npm or the VS Code Marketplace.
 - Optional Homebrew tap update when `HOMEBREW_TAP_TOKEN` is set.
+- Linux release binaries link against glibc 2.17, so they run on every maintained
+  distribution. A build on the newest runner image required glibc 2.43 and failed to
+  start on Ubuntu 24.04 and older. The release now checks this, and runs each packaged
+  binary before uploading it.
 - `cargo xtask bump <version>` sets the version in every manifest, refreshes
   `Cargo.lock` and dates the changelog. The release workflow refuses a tag that does not
   match, and uses the changelog section as the release notes.
