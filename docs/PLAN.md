@@ -476,7 +476,7 @@ a 300-page thesis, 40 source files, 500 annotations.
 | `list` | under 50 ms | not applicable |
 | `sync` | under 300 ms | under 1 s |
 | Peak memory | under 300 MB | under 400 MB |
-| Browser app first load (excluding pdfium) | not applicable | under 150 KB compressed JS and WASM |
+| Browser app first load (before an import starts) | not applicable | under 150 KB compressed |
 
 How:
 
@@ -693,8 +693,12 @@ suites, run in CI on every pull request.
 | Typst | 120 | 120 | 0 | same as LaTeX |
 | Browser and npm against native | 40 | identical | | identical |
 
-Performance on the reference input (322 pages, 500 notes): cold import 310 ms, warm
-import 42 ms, sync 0.2 ms, peak memory 99 MB. All within §11.
+Performance on the reference input (322 pages, 500 notes): cold import 336 ms, warm
+import 34 ms, sync 0.2 ms, peak memory 99 MB. All within §11.
+
+Browser app: the page itself is about 14 KB compressed (plus fonts). The engine is
+fetched when the first import starts and then cached: the core is 670 KB and pdfium
+2419 KB, compressed.
 
 ### 21.2 Changes from v1.0 of the plan
 
