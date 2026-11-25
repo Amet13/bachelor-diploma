@@ -45,7 +45,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "test": "tsc -p . && node --test out/test/*.test.js",
-    "package": "npx --yes @vscode/vsce@3 package --no-dependencies"
+    "package": "npx --yes @vscode/vsce@4.1.0 package --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
