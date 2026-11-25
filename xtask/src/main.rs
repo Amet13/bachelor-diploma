@@ -17,9 +17,9 @@ fn main() -> Result<()> {
     match args.first().map(String::as_str) {
         Some("schema") => schema(&root, args.iter().any(|a| a == "--check")),
         Some("fixtures") => fixtures(&root),
-        Some("pdfium") => pdfium(&root),
+        Some("pdfium") => pdfium(&root, args.iter().position(|a| a == "--platform").and_then(|i| args.get(i + 1)).map(String::as_str)),
         _ => {
-            eprintln!("usage: cargo xtask <schema [--check] | fixtures | pdfium>");
+            eprintln!("usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...]>");
             std::process::exit(2);
         }
     }
@@ -112,7 +112,7 @@ const PDFIUM_BUILDS: &[(&str, &str)] = &[
     ),
 ];
 
-fn pdfium(root: &Path) -> Result<()> {
+fn pdfium(root: &Path, platform_override: Option<&str>) -> Result<()> {
     use sha2::{Digest, Sha256};
     let os = match std::env::consts::OS {
         "linux" => "linux",
@@ -125,7 +125,7 @@ fn pdfium(root: &Path) -> Result<()> {
         "aarch64" => "arm64",
         other => bail!("no pinned PDFium build for {other}"),
     };
-    let platform = format!("{os}-{arch}");
+    let platform = platform_override.map_or_else(|| format!("{os}-{arch}"), str::to_owned);
     let (_, sha) = PDFIUM_BUILDS
         .iter()
         .find(|(p, _)| *p == platform)
