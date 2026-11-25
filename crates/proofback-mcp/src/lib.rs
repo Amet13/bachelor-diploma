@@ -13,13 +13,15 @@ mod diff;
 use std::collections::HashMap;
 use std::io::{BufRead, Write};
 
-use proofback_emit::{letter, markdown_checklist, sarif, LetterFormat};
+use proofback_emit::{LetterFormat, letter, markdown_checklist, sarif};
 use proofback_model::{Item, RoundFile, Status};
-use proofback_store::edit::{apply_in_memory, edit_for, resolve, unified_diff, write_changes, Changes, Edit, ResolveOptions};
+use proofback_store::edit::{
+    Changes, Edit, ResolveOptions, apply_in_memory, edit_for, resolve, unified_diff, write_changes,
+};
 use proofback_store::sync::sync_items;
 use proofback_store::views::{detail, row};
 use proofback_store::{Error, Project};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Protocol versions this server speaks, newest first.
 pub const PROTOCOL_VERSIONS: &[&str] = &["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -41,13 +43,19 @@ pub struct Server {
 
 impl std::fmt::Debug for Server {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Server").field("root", &self.project.root).finish_non_exhaustive()
+        f.debug_struct("Server")
+            .field("root", &self.project.root)
+            .finish_non_exhaustive()
     }
 }
 
 impl Server {
     pub fn new(project: Project, now: Box<dyn Fn() -> String + Send>) -> Self {
-        Self { project, now, proposals: HashMap::new() }
+        Self {
+            project,
+            now,
+            proposals: HashMap::new(),
+        }
     }
 
     /// Serve until the input closes.
@@ -58,13 +66,19 @@ impl Server {
                 continue;
             }
             if line.len() > 4 << 20 {
-                write_msg(&mut output, &error_response(&Value::Null, -32600, "message too large"))?;
+                write_msg(
+                    &mut output,
+                    &error_response(&Value::Null, -32600, "message too large"),
+                )?;
                 continue;
             }
             let msg: Value = match serde_json::from_str(&line) {
                 Ok(v) => v,
                 Err(e) => {
-                    write_msg(&mut output, &error_response(&Value::Null, -32700, &format!("parse error: {e}")))?;
+                    write_msg(
+                        &mut output,
+                        &error_response(&Value::Null, -32700, &format!("parse error: {e}")),
+                    )?;
                     continue;
                 }
             };
@@ -82,7 +96,7 @@ impl Server {
         let params = msg.get("params").cloned().unwrap_or(Value::Null);
         let id = id?; // notifications (no id) get no response
         let result = match method {
-            "initialize" => Ok(self.initialize(&params)),
+            "initialize" => Ok(Self::initialize(&params)),
             "ping" => Ok(json!({})),
             "tools/list" => Ok(json!({ "tools": tools() })),
             "tools/call" => Ok(self.call(&params)),
@@ -96,9 +110,16 @@ impl Server {
         })
     }
 
-    fn initialize(&self, params: &Value) -> Value {
-        let requested = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSIONS[0]);
-        let version = if PROTOCOL_VERSIONS.contains(&requested) { requested } else { PROTOCOL_VERSIONS[0] };
+    fn initialize(params: &Value) -> Value {
+        let requested = params
+            .get("protocolVersion")
+            .and_then(Value::as_str)
+            .unwrap_or(PROTOCOL_VERSIONS[0]);
+        let version = if PROTOCOL_VERSIONS.contains(&requested) {
+            requested
+        } else {
+            PROTOCOL_VERSIONS[0]
+        };
         json!({
             "protocolVersion": version,
             "capabilities": { "tools": { "listChanged": false } },
@@ -109,7 +130,10 @@ impl Server {
 
     fn call(&mut self, params: &Value) -> Value {
         let name = params.get("name").and_then(Value::as_str).unwrap_or("");
-        let args = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+        let args = params
+            .get("arguments")
+            .cloned()
+            .unwrap_or_else(|| json!({}));
         let out = match name {
             "list_items" => self.list_items(&args),
             "get_item" => self.get_item(&args),
@@ -122,14 +146,21 @@ impl Server {
         };
         match out {
             Ok(v) => {
-                let text = if let Some(s) = v.as_str() { s.to_owned() } else { serde_json::to_string_pretty(&v).unwrap_or_default() };
-                let mut r = json!({ "content": [{ "type": "text", "text": text }], "isError": false });
+                let text = if let Some(s) = v.as_str() {
+                    s.to_owned()
+                } else {
+                    serde_json::to_string_pretty(&v).unwrap_or_default()
+                };
+                let mut r =
+                    json!({ "content": [{ "type": "text", "text": text }], "isError": false });
                 if v.is_object() {
                     r["structuredContent"] = v;
                 }
                 r
             }
-            Err(e) => json!({ "content": [{ "type": "text", "text": e.to_string() }], "isError": true }),
+            Err(e) => {
+                json!({ "content": [{ "type": "text", "text": e.to_string() }], "isError": true })
+            }
         }
     }
 
@@ -139,7 +170,11 @@ impl Server {
 
     fn list_items(&self, a: &Value) -> Result<Value, Error> {
         let rounds = self.rounds()?;
-        let status = a.get("status").and_then(Value::as_str).map(|s| Status::parse(s).ok_or_else(|| Error::Usage(format!("unknown status {s:?}")))).transpose()?;
+        let status = a
+            .get("status")
+            .and_then(Value::as_str)
+            .map(|s| Status::parse(s).ok_or_else(|| Error::Usage(format!("unknown status {s:?}"))))
+            .transpose()?;
         let round = a.get("round").and_then(Value::as_str);
         let file = a.get("file").and_then(Value::as_str);
         let kind = a.get("kind").and_then(Value::as_str);
@@ -149,21 +184,30 @@ impl Server {
             .flat_map(|r| r.items.iter())
             .filter(|i| status.is_none_or(|s| i.status == s))
             .filter(|i| kind.is_none_or(|k| i.kind.as_str() == k))
-            .filter(|i| file.is_none_or(|f| i.target.as_ref().is_some_and(|t| glob_match(f, &t.file))))
+            .filter(|i| {
+                file.is_none_or(|f| i.target.as_ref().is_some_and(|t| glob_match(f, &t.file)))
+            })
             .map(row)
             .collect();
         Ok(json!({ "count": rows.len(), "items": rows }))
     }
 
     fn find<'a>(&self, rounds: &'a [RoundFile], a: &Value) -> Result<(usize, &'a Item), Error> {
-        let id = a.get("id").and_then(Value::as_str).ok_or_else(|| Error::Usage("missing `id`".into()))?;
+        let id = a
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| Error::Usage("missing `id`".into()))?;
         self.project.find_item(rounds, id)
     }
 
     fn get_item(&self, a: &Value) -> Result<Value, Error> {
         let rounds = self.rounds()?;
         let (_, item) = self.find(&rounds, a)?;
-        let ctx = a.get("context_lines").and_then(Value::as_u64).unwrap_or(20).min(200) as u32;
+        let ctx = a
+            .get("context_lines")
+            .and_then(Value::as_u64)
+            .unwrap_or(20)
+            .min(200) as u32;
         let (sources, _) = self.project.load_sources()?;
         Ok(serde_json::to_value(detail(item, &sources, ctx)).unwrap_or_default())
     }
@@ -173,23 +217,42 @@ impl Server {
         let rounds = self.rounds()?;
         let (_, item) = self.find(&rounds, a)?;
         let (sources, _) = self.project.load_sources()?;
-        let target = item.target.as_ref().ok_or_else(|| Error::Refused(format!("{} has no source location", item.id)))?;
-        let src = sources.get(&target.file).ok_or_else(|| Error::Refused(format!("{} is not a loaded source file", target.file)))?;
+        let target = item
+            .target
+            .as_ref()
+            .ok_or_else(|| Error::Refused(format!("{} has no source location", item.id)))?;
+        let src = sources.get(&target.file).ok_or_else(|| {
+            Error::Refused(format!("{} is not a loaded source file", target.file))
+        })?;
         let changes: Changes = if let Some(text) = a.get("new_text").and_then(Value::as_str) {
             // Replace the anchored range (or insert at an insertion point).
             let current = src.text.get(target.range.as_range()).unwrap_or_default();
             if current != target.quote.exact {
-                return Err(Error::Refused(format!("{}: the anchored text changed; call sync first", item.id)));
+                return Err(Error::Refused(format!(
+                    "{}: the anchored text changed; call sync first",
+                    item.id
+                )));
             }
-            let e = Edit { file: target.file.clone(), range: target.range.as_range(), replacement: text.to_owned(), item: item.id.to_string() };
+            let e = Edit {
+                file: target.file.clone(),
+                range: target.range.as_range(),
+                replacement: text.to_owned(),
+                item: item.id.to_string(),
+            };
             apply_in_memory(&[e], &sources)?
         } else if let Some(d) = a.get("diff").and_then(Value::as_str) {
             let (file, new) = diff::apply_unified(d, |f| sources.get(f).map(|s| s.text.clone()))?;
             if file != target.file {
-                return Err(Error::Refused(format!("the diff changes {file}, but {} is anchored in {}", item.id, target.file)));
+                return Err(Error::Refused(format!(
+                    "the diff changes {file}, but {} is anchored in {}",
+                    item.id, target.file
+                )));
             }
             if !diff::touches(&src.text, &new, target.range.as_range()) {
-                return Err(Error::Refused(format!("the diff does not touch the text {} is anchored to", item.id)));
+                return Err(Error::Refused(format!(
+                    "the diff does not touch the text {} is anchored to",
+                    item.id
+                )));
             }
             let mut c = Changes::new();
             c.insert(file, (src.text.clone(), new));
@@ -198,33 +261,54 @@ impl Server {
             let e = edit_for(item, &sources)?;
             apply_in_memory(&[e], &sources)?
         } else {
-            return Err(Error::Usage("give `new_text` or `diff` (the reviewer did not propose a concrete edit)".into()));
+            return Err(Error::Usage(
+                "give `new_text` or `diff` (the reviewer did not propose a concrete edit)".into(),
+            ));
         };
         let rendered = unified_diff(&changes);
         self.proposals.insert(item.id.to_string(), changes);
-        Ok(json!({ "id": item.id.to_string(), "valid": true, "diff": rendered, "next": "Show the diff to the user, then call apply_patch with the same id." }))
+        Ok(
+            json!({ "id": item.id.to_string(), "valid": true, "diff": rendered, "next": "Show the diff to the user, then call apply_patch with the same id." }),
+        )
     }
 
     fn apply_patch(&mut self, a: &Value) -> Result<Value, Error> {
         let rounds = self.rounds()?;
         let (_, item) = self.find(&rounds, a)?;
         let id = item.id.to_string();
-        let changes = self.proposals.remove(&id).ok_or_else(|| Error::Refused(format!("no validated proposal for {id}; call propose_patch first")))?;
+        let changes = self.proposals.remove(&id).ok_or_else(|| {
+            Error::Refused(format!(
+                "no validated proposal for {id}; call propose_patch first"
+            ))
+        })?;
         write_changes(&self.project, &changes)?;
-        Ok(json!({ "id": id, "applied": true, "files": changes.keys().collect::<Vec<_>>(), "next": "Call resolve_item with status done (and a reply if useful)." }))
+        Ok(
+            json!({ "id": id, "applied": true, "files": changes.keys().collect::<Vec<_>>(), "next": "Call resolve_item with status done (and a reply if useful)." }),
+        )
     }
 
     fn resolve_item(&mut self, a: &Value) -> Result<Value, Error> {
         let mut rounds = self.rounds()?;
         let (ri, item) = self.find(&rounds, a)?;
         let item_id = item.id.clone();
-        let status = a.get("status").and_then(Value::as_str).map(|s| Status::parse(s).ok_or_else(|| Error::Usage(format!("unknown status {s:?}")))).transpose()?;
+        let status = a
+            .get("status")
+            .and_then(Value::as_str)
+            .map(|s| Status::parse(s).ok_or_else(|| Error::Usage(format!("unknown status {s:?}"))))
+            .transpose()?;
         let reply = a.get("reply").and_then(Value::as_str).map(str::to_owned);
         if status.is_none() && reply.is_none() {
             return Err(Error::Usage("give `status` and/or `reply`".into()));
         }
         let (sources, _) = self.project.load_sources()?;
-        let opts = ResolveOptions { status, reply, author: format!("{} (via agent)", self.project.config.author), now: (self.now)(), force: false, commit: None };
+        let opts = ResolveOptions {
+            status,
+            reply,
+            author: format!("{} (via agent)", self.project.config.author),
+            now: (self.now)(),
+            force: false,
+            commit: None,
+        };
         let it = rounds[ri].item_mut(&item_id).expect("found");
         resolve(it, &sources, &opts)?;
         let snapshot = row(it);
@@ -251,12 +335,16 @@ impl Server {
     fn export(&self, a: &Value) -> Result<Value, Error> {
         let rounds = self.rounds()?;
         let items: Vec<&Item> = rounds.iter().flat_map(|r| r.items.iter()).collect();
-        let format = a.get("format").and_then(Value::as_str).unwrap_or("markdown");
+        let format = a
+            .get("format")
+            .and_then(Value::as_str)
+            .unwrap_or("markdown");
         let text = match format {
             "markdown" => markdown_checklist(&items),
             "letter_markdown" => letter(&items, "Response to the review", LetterFormat::Markdown),
             "letter_latex" => letter(&items, "Response to the review", LetterFormat::Latex),
-            "sarif" => serde_json::to_string_pretty(&sarif(&items, env!("CARGO_PKG_VERSION"))).unwrap_or_default(),
+            "sarif" => serde_json::to_string_pretty(&sarif(&items, env!("CARGO_PKG_VERSION")))
+                .unwrap_or_default(),
             other => return Err(Error::Usage(format!("unknown format {other:?}"))),
         };
         Ok(Value::String(text))

@@ -121,7 +121,9 @@ pub fn run(cli: &Cli) -> Result<u8> {
             let p = project()?;
             let mut server = proofback_mcp::Server::new(p, Box::new(now));
             let stdin = std::io::stdin();
-            server.serve(stdin.lock(), std::io::stdout().lock()).map_err(|e| Error::Input(e.to_string()))?;
+            server
+                .serve(stdin.lock(), std::io::stdout().lock())
+                .map_err(|e| Error::Input(e.to_string()))?;
             Ok(0)
         }
         Command::Schema => {

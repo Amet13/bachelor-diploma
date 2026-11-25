@@ -3,11 +3,14 @@
   "private": true,
   "description": "Checks for the static website in ../site. Not published.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "validate": "html-validate ../site/index.html ../site/404.html",
+    "validate": "html-validate ../site/index.html ../site/404.html ../site/app/index.html",
     "smoke": "node site-smoke.mjs",
-    "check": "npm run validate && npm run smoke"
+    "check": "npm run validate && npm run smoke",
+    "app": "node app-smoke.mjs"
   },
   "devDependencies": {
     "html-validate": "11.19.0",

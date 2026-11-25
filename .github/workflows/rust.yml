@@ -80,8 +80,9 @@ jobs:
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
+          components: clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: cargo check --locked --target wasm32-unknown-unknown -p proofback-model -p proofback-synctex -p proofback-tex
+      - run: cargo clippy --locked --target wasm32-unknown-unknown -p proofback-model -p proofback-synctex -p proofback-tex -p proofback-wasm
 
   deny:
     runs-on: ubuntu-latest

@@ -605,9 +605,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 6.0.0",
  "rand_core 0.10.1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1110,6 +1112,22 @@ version = "0.0.0"
 dependencies = [
  "proptest",
  "unicode-normalization",
+]
+
+[[package]]
+name = "proofback-wasm"
+version = "0.0.0"
+dependencies = [
+ "pdfium-render",
+ "proofback-anchor",
+ "proofback-emit",
+ "proofback-model",
+ "proofback-pdf",
+ "proofback-store",
+ "proofback-synctex",
+ "serde_json",
+ "wasm-bindgen",
+ "zip",
 ]
 
 [[package]]
@@ -1675,6 +1693,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
+name = "typed-path"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54ec2755506471f54baf5e4bb5499d8e510cc1caf271270e778a736bd2d7336c"
+
+[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2047,7 +2071,9 @@ name = "xtask"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "proofback-corpus",
  "proofback-model",
+ "proofback-pdf",
  "serde_json",
  "sha2 0.11.0",
 ]
@@ -2070,6 +2096,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "zip"
+version = "7.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "268bf6f9ceb991e07155234071501490bb41fd1e39c6a588106dad10ae2a5804"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "indexmap",
+ "memchr",
+ "typed-path",
 ]
 
 [[package]]
