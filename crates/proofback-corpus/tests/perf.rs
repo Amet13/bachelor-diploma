@@ -6,8 +6,8 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use proofback_anchor::{import, Input, Sources};
-use proofback_corpus::{generate, Fixture};
+use proofback_anchor::{Input, Sources, import};
+use proofback_corpus::{Fixture, generate};
 use proofback_synctex::SyncTex;
 
 #[test]
@@ -18,7 +18,11 @@ fn import_meets_budgets() {
     };
     let pdfium = proofback_pdf::load_pdfium(None).expect("PDFium");
     let fx = Fixture::load(&dir).unwrap();
-    assert!(fx.synctex.pages().len() >= 290, "fixture has {} pages", fx.synctex.pages().len());
+    assert!(
+        fx.synctex.pages().len() >= 290,
+        "fixture has {} pages",
+        fx.synctex.pages().len()
+    );
     let (pdf, truths) = generate(&fx, &pdfium, 500, 11).unwrap();
     assert!(truths.len() >= 480, "generated {}", truths.len());
     let synctex_bytes = std::fs::read(dir.join("main.synctex.gz")).unwrap();
@@ -29,12 +33,21 @@ fn import_meets_budgets() {
 
     // Cold: parse the PDF, SyncTeX and sources from scratch, then anchor.
     let t0 = Instant::now();
-    let extracted = proofback_pdf::extract(&pdfium, &pdf, proofback_pdf::Limits::default()).unwrap();
+    let extracted =
+        proofback_pdf::extract(&pdfium, &pdf, proofback_pdf::Limits::default()).unwrap();
     let t_extract = t0.elapsed();
-    let synctex = SyncTex::parse(synctex_bytes.as_slice(), proofback_synctex::Limits::default()).unwrap();
-    let t_synctex = t0.elapsed() - t_extract;
+    let synctex = SyncTex::parse(
+        synctex_bytes.as_slice(),
+        proofback_synctex::Limits::default(),
+    )
+    .unwrap();
+    let t_synctex = t0.elapsed().saturating_sub(t_extract);
     let sources = Sources::new(files.clone());
-    let texts = extracted.texts.iter().map(|t| (t.page, t.clone())).collect();
+    let texts = extracted
+        .texts
+        .iter()
+        .map(|t| (t.page, t.clone()))
+        .collect();
     let input = Input {
         round: "perf",
         annotations: &extracted.annotations,
@@ -65,14 +78,24 @@ fn import_meets_budgets() {
     let peak_mb = peak_rss_mb();
     eprintln!(
         "pages {} annotations {}: extract {:?}, synctex {:?}, cold import {:?}, warm import {:?}, sync {:?}, peak RSS {:?} MB",
-        fx.synctex.pages().len(), items.len(), t_extract, t_synctex, cold, warm, sync, peak_mb
+        fx.synctex.pages().len(),
+        items.len(),
+        t_extract,
+        t_synctex,
+        cold,
+        warm,
+        sync,
+        peak_mb
     );
     if cfg!(debug_assertions) {
         eprintln!("debug build: budgets not enforced");
         return;
     }
     assert!(cold.as_secs_f64() < 1.0, "cold import {cold:?} exceeds 1 s");
-    assert!(warm.as_secs_f64() < 0.3, "warm import {warm:?} exceeds 300 ms");
+    assert!(
+        warm.as_secs_f64() < 0.3,
+        "warm import {warm:?} exceeds 300 ms"
+    );
     assert!(sync.as_secs_f64() < 0.3, "sync {sync:?} exceeds 300 ms");
     if let Some(mb) = peak_mb {
         assert!(mb < 300, "peak memory {mb} MB exceeds 300 MB");

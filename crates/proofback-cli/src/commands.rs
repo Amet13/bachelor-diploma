@@ -47,6 +47,12 @@ pub fn run(cli: &Cli) -> Result<u8> {
         Command::Import(a) => cmd_import(&project()?, a, cli.quiet, &style),
         Command::List(a) => cmd_list(&project()?, a, &style),
         Command::Show { id, json, context } => cmd_show(&project()?, id, *json, *context, &style),
+        Command::Triage { all } => {
+            let p = project()?;
+            let head = git::head(&p.root);
+            crate::triage::run(&p, *all, &now, head.as_deref())?;
+            Ok(0)
+        }
         Command::Resolve {
             id,
             status,
