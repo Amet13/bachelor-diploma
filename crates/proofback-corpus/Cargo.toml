@@ -20,3 +20,6 @@ serde_json = "1.0.154"
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+proofback-store = { path = "../proofback-store" }

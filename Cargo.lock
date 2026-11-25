@@ -815,6 +815,7 @@ dependencies = [
  "proofback-anchor",
  "proofback-model",
  "proofback-pdf",
+ "proofback-store",
  "proofback-synctex",
  "proofback-tex",
  "serde",
