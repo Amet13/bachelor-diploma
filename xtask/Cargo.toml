@@ -1,0 +1,17 @@
+[package]
+name = "xtask"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = "1.0.105"
+proofback-model = { version = "0.0.0", path = "../crates/proofback-model" }
+serde_json = "1.0.154"
+
+[lints]
+workspace = true

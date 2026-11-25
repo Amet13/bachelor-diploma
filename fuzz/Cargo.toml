@@ -1,0 +1,27 @@
+[package]
+name = "proofback-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+proofback-synctex = { path = "../crates/proofback-synctex" }
+proofback-tex = { path = "../crates/proofback-tex" }
+
+[[bin]]
+name = "synctex"
+path = "fuzz_targets/synctex.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tex_normalize"
+path = "fuzz_targets/tex_normalize.rs"
+test = false
+doc = false
+bench = false
