@@ -9,10 +9,10 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-proofback-anchor = { version = "0.1.0", path = "../proofback-anchor" }
-proofback-model = { version = "0.1.0", path = "../proofback-model" }
-proofback-synctex = { version = "0.1.0", path = "../proofback-synctex" }
-proofback-tex = { version = "0.1.0", path = "../proofback-tex" }
+proofback-anchor = { version = "0.2.0", path = "../proofback-anchor" }
+proofback-model = { version = "0.2.0", path = "../proofback-model" }
+proofback-synctex = { version = "0.2.0", path = "../proofback-synctex" }
+proofback-tex = { version = "0.2.0", path = "../proofback-tex" }
 regex = "1.13.2"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"

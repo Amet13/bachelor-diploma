@@ -9,10 +9,10 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-proofback-anchor = { version = "0.1.0", path = "../proofback-anchor" }
-proofback-model = { version = "0.1.0", path = "../proofback-model" }
-proofback-pdf = { version = "0.1.0", path = "../proofback-pdf" }
-proofback-tex = { version = "0.1.0", path = "../proofback-tex" }
+proofback-anchor = { version = "0.2.0", path = "../proofback-anchor" }
+proofback-model = { version = "0.2.0", path = "../proofback-model" }
+proofback-pdf = { version = "0.2.0", path = "../proofback-pdf" }
+proofback-tex = { version = "0.2.0", path = "../proofback-tex" }
 typst = "0.15.1"
 typst-assets = { version = "0.15.1", features = ["fonts"] }
 typst-layout = "0.15.1"

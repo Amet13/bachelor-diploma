@@ -2,7 +2,7 @@
   "name": "proofback",
   "displayName": "proofback",
   "description": "Reviewer feedback from annotated PDFs and Word documents, on the exact lines of your LaTeX source.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "proofback",
   "license": "MIT OR Apache-2.0",
   "repository": { "type": "git", "url": "https://github.com/Amet13/proofback.git", "directory": "integrations/vscode" },

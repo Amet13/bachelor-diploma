@@ -1,6 +1,6 @@
 {
   "name": "proofback",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Map reviewer feedback on a PDF to the exact line of your LaTeX source. WebAssembly build for Node.",
   "license": "MIT OR Apache-2.0",
   "homepage": "https://amet13.github.io/proofback/",
