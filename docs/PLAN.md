@@ -464,4 +464,4 @@ The hard part of Word is mapping edits back. proofback solves it at **export**:
 | D-10 | Published, CI-gated accuracy metrics |
 | D-11 | MIT OR Apache-2.0 |
 | D-12 | Name **proofback** — free on GitHub, npm and crates.io (checked 2026-11-25) |
-| D-13 | Website: "proofreader's desk" design, dependency-free static HTML/CSS/JS on GitHub Pages; app added under `/app` in M5 |
+| D-13 | Website styled after the product itself (PDF-viewer grey, highlighter yellow, strike-out red, mapping blue; Computer Modern on the demo page), avoiding common AI-generated design defaults; dependency-free static HTML/CSS/JS on GitHub Pages; app added under `/app` in M5 |
