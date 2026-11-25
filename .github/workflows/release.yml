@@ -1,0 +1,98 @@
+name: Release
+
+# Builds per-platform archives that bundle the pinned PDFium, publishes them with
+# SHA-256 checksums and signed build provenance, and generates a Homebrew formula.
+# Runs when a version tag (v1.2.3) is pushed.
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, pdfium: linux-x64, archive: tar.gz }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pdfium: linux-arm64, archive: tar.gz }
+          - { target: x86_64-apple-darwin, os: macos-latest, pdfium: mac-x64, archive: tar.gz }
+          - { target: aarch64-apple-darwin, os: macos-latest, pdfium: mac-arm64, archive: tar.gz }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, pdfium: win-x64, archive: zip }
+          - { target: aarch64-pc-windows-msvc, os: windows-11-arm, pdfium: win-arm64, archive: zip }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }} -p proofback-cli
+      - name: Fetch the pinned PDFium for this platform
+        run: cargo xtask pdfium --platform ${{ matrix.pdfium }}
+      - name: Package
+        shell: bash
+        run: |
+          name="proofback-${{ matrix.target }}"
+          mkdir -p "dist/$name/lib"
+          bin="target/${{ matrix.target }}/release/proofback"
+          [ -f "$bin.exe" ] && bin="$bin.exe"
+          cp "$bin" "dist/$name/"
+          cp target/pdfium/lib/* "dist/$name/lib/" 2>/dev/null || true
+          cp target/pdfium/bin/*.dll "dist/$name/" 2>/dev/null || true
+          cp target/pdfium/LICENSE "dist/$name/PDFIUM-LICENSE"
+          cp -r target/pdfium/licenses "dist/$name/pdfium-licenses"
+          cp README.md LICENSE-MIT LICENSE-APACHE "dist/$name/"
+          cd dist
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            7z a "$name.zip" "$name" > /dev/null
+            file="$name.zip"
+          else
+            tar czf "$name.tar.gz" "$name"
+            file="$name.tar.gz"
+          fi
+          if command -v sha256sum > /dev/null; then sha256sum "$file" > "$file.sha256"; else shasum -a 256 "$file" > "$file.sha256"; fi
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/proofback-${{ matrix.target }}.*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: proofback-${{ matrix.target }}
+          path: dist/proofback-${{ matrix.target }}.*
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate Homebrew formula
+        run: python3 packaging/homebrew/generate.py "${GITHUB_REF_NAME#v}" dist > dist/proofback.rb
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          files: |
+            dist/*
+            packaging/install.sh
+            packaging/install.ps1
+          generate_release_notes: true
