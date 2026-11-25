@@ -293,31 +293,31 @@ fn detail_lines<'a>(it: &Item, sources: &Sources) -> Vec<Line<'a>> {
         }
     }
     lines.push(Line::from(""));
-    if let Some(t) = &it.target {
-        if let Some(src) = sources.get(&t.file) {
-            lines.push(Line::styled(
-                format!("{}:{}", t.file, t.line),
-                Style::default().add_modifier(Modifier::DIM),
-            ));
-            let first = t.line.saturating_sub(3).max(1);
-            let last = (t.end_line + 3).min(src.line_count() as u32);
-            for l in first..=last {
-                if let Some(r) = src.line_range(l as usize) {
-                    let mark = if l >= t.line && l <= t.end_line {
-                        ">"
-                    } else {
-                        " "
-                    };
-                    let style = if mark == ">" {
-                        Style::default().fg(Color::Cyan)
-                    } else {
-                        Style::default()
-                    };
-                    lines.push(Line::styled(
-                        format!("{mark}{l:>5} | {}", clean(&src.text[r])),
-                        style,
-                    ));
-                }
+    if let Some(t) = &it.target
+        && let Some(src) = sources.get(&t.file)
+    {
+        lines.push(Line::styled(
+            format!("{}:{}", t.file, t.line),
+            Style::default().add_modifier(Modifier::DIM),
+        ));
+        let first = t.line.saturating_sub(3).max(1);
+        let last = (t.end_line + 3).min(src.line_count() as u32);
+        for l in first..=last {
+            if let Some(r) = src.line_range(l as usize) {
+                let mark = if l >= t.line && l <= t.end_line {
+                    ">"
+                } else {
+                    " "
+                };
+                let style = if mark == ">" {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default()
+                };
+                lines.push(Line::styled(
+                    format!("{mark}{l:>5} | {}", clean(&src.text[r])),
+                    style,
+                ));
             }
         }
     }
@@ -449,6 +449,7 @@ mod tests {
                 state: AnchorState::Anchored,
                 confidence: Confidence::Page,
                 reason: "test".into(),
+                pending: None,
             },
             origin: Origin::Notes {
                 line: 1,

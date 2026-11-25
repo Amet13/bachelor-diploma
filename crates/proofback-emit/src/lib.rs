@@ -348,6 +348,7 @@ mod tests {
                 state: AnchorState::Anchored,
                 confidence: Confidence::Exact,
                 reason: String::new(),
+                pending: None,
             },
             origin: Origin::Pdf {
                 page: 2,

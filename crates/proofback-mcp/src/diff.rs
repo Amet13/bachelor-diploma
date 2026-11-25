@@ -28,14 +28,14 @@ pub fn apply_unified(
                 .and_then(|n| n.parse().ok())
                 .ok_or_else(|| Error::Usage("malformed hunk header".into()))?;
             hunks.push((start, Vec::new()));
-        } else if let Some((_, body)) = hunks.last_mut() {
-            if line.starts_with([' ', '+', '-']) || line.is_empty() {
-                body.push(if line.is_empty() {
-                    " ".to_owned()
-                } else {
-                    line.to_owned()
-                });
-            }
+        } else if let Some((_, body)) = hunks.last_mut()
+            && (line.starts_with([' ', '+', '-']) || line.is_empty())
+        {
+            body.push(if line.is_empty() {
+                " ".to_owned()
+            } else {
+                line.to_owned()
+            });
         }
     }
     let file = file.ok_or_else(|| Error::Usage("the diff has no +++ header".into()))?;

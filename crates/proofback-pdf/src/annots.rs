@@ -163,7 +163,9 @@ pub fn read_annotations(
                 .and_then(|o| resolve(&doc, o).as_array().ok())
                 .map(|a| {
                     let nums: Vec<f32> = a.iter().filter_map(|o| number_of(&doc, o)).collect();
-                    nums.chunks_exact(8)
+                    nums.as_chunks::<8>()
+                        .0
+                        .iter()
                         .map(|c| [c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]])
                         .collect()
                 })
@@ -314,10 +316,10 @@ pub fn write_annotations(bytes: &[u8], specs: &[AnnotationSpec]) -> Result<Vec<u
 pub fn strip_metadata(bytes: &[u8]) -> Result<Vec<u8>, Error> {
     let mut doc = load(bytes)?;
     doc.trailer.remove(b"Info");
-    if let Ok(root_id) = doc.trailer.get(b"Root").and_then(Object::as_reference) {
-        if let Ok(root) = doc.get_dictionary_mut(root_id) {
-            root.remove(b"Metadata");
-        }
+    if let Ok(root_id) = doc.trailer.get(b"Root").and_then(Object::as_reference)
+        && let Ok(root) = doc.get_dictionary_mut(root_id)
+    {
+        root.remove(b"Metadata");
     }
     save(&mut doc)
 }
@@ -449,7 +451,9 @@ fn text(doc: &Document, d: &Dictionary, key: &[u8]) -> Option<String> {
 pub fn decode_text_string(bytes: &[u8]) -> String {
     if bytes.starts_with(&[0xFE, 0xFF]) {
         let units: Vec<u16> = bytes[2..]
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|c| u16::from_be_bytes([c[0], c[1]]))
             .collect();
         return String::from_utf16_lossy(&units);

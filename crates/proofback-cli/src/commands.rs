@@ -47,6 +47,8 @@ pub fn run(cli: &Cli) -> Result<u8> {
         Command::Import(a) => cmd_import(&project()?, a, cli.quiet, &style),
         Command::List(a) => cmd_list(&project()?, a, &style),
         Command::Show { id, json, context } => cmd_show(&project()?, id, *json, *context, &style),
+        Command::Confirm { id } => crate::notes_cmd::confirm(&project()?, id, cli.quiet),
+        Command::Suggest { id, consent } => crate::notes_cmd::suggest(&project()?, id, *consent),
         Command::Triage { all } => {
             let p = project()?;
             let head = git::head(&p.root);
@@ -137,7 +139,7 @@ pub fn run(cli: &Cli) -> Result<u8> {
     }
 }
 
-fn now() -> String {
+pub(crate) fn now() -> String {
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_secs() as i64);
@@ -153,7 +155,7 @@ fn emit(path: Option<&Path>, text: &str) -> Result<()> {
     }
 }
 
-fn read_limited(path: &Path, max_mb: u64) -> Result<Vec<u8>> {
+pub(crate) fn read_limited(path: &Path, max_mb: u64) -> Result<Vec<u8>> {
     let meta = std::fs::metadata(path)
         .map_err(|e| Error::Input(format!("cannot read {}: {e}", path.display())))?;
     if meta.len() > max_mb * 1024 * 1024 {
@@ -166,7 +168,7 @@ fn read_limited(path: &Path, max_mb: u64) -> Result<Vec<u8>> {
 }
 
 /// Find the SyncTeX file for a PDF.
-fn find_synctex(p: &Project, pdf: &Path, explicit: Option<&Path>) -> Option<PathBuf> {
+pub(crate) fn find_synctex(p: &Project, pdf: &Path, explicit: Option<&Path>) -> Option<PathBuf> {
     if let Some(e) = explicit {
         return Some(e.to_path_buf());
     }
@@ -194,11 +196,13 @@ fn cmd_import(p: &Project, a: &ImportArgs, quiet: bool, style: &Style) -> Result
         .extension()
         .map(|e| e.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    if ext != "pdf" {
-        return Err(Error::Usage(format!(
-            "{} is not a PDF; this version imports annotated PDFs (notes and Word files come in later versions)",
-            a.file.display()
-        )));
+    match ext.as_str() {
+        "pdf" => {}
+        "docx" => return crate::docx_cmd::import(p, a, quiet, style),
+        "png" | "jpg" | "jpeg" | "webp" | "gif" => {
+            return crate::notes_cmd::import(p, a, quiet, style, true);
+        }
+        _ => return crate::notes_cmd::import(p, a, quiet, style, false),
     }
     let pdf_bytes = read_limited(&a.file, p.config.limits.max_pdf_mb)?;
     let extracted = crate::extract::extract_isolated(&a.file, &p.config.limits)?;

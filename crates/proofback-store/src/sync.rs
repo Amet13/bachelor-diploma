@@ -75,14 +75,14 @@ fn relocate(t: &Target, text: &str) -> Relocated {
             }
         }
         let count = text.matches(q.exact.as_str()).count();
-        if let Some((score, cand)) = best {
-            if count == 1 || score >= 8 {
-                return if cand == r {
-                    Relocated::Same
-                } else {
-                    Relocated::Moved(cand)
-                };
-            }
+        if let Some((score, cand)) = best
+            && (count == 1 || score >= 8)
+        {
+            return if cand == r {
+                Relocated::Same
+            } else {
+                Relocated::Moved(cand)
+            };
         }
     } else if !q.prefix.is_empty() || !q.suffix.is_empty() {
         // Insertion point: the context around it.
@@ -178,6 +178,7 @@ mod tests {
                 state: AnchorState::Anchored,
                 confidence: Confidence::Exact,
                 reason: String::new(),
+                pending: None,
             },
             origin: Origin::Notes {
                 line: 1,

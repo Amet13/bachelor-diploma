@@ -338,10 +338,10 @@ pub fn resolve_input(project_root: &Path, recorded: &str) -> Option<PathBuf> {
         let mut v = Vec::new();
         let root = project_root.to_string_lossy().replace('\\', "/");
         let root = root.trim_end_matches('/');
-        if !root.is_empty() {
-            if let Some(rest) = recorded.strip_prefix(&format!("{root}/")) {
-                v.push(rest.to_owned());
-            }
+        if !root.is_empty()
+            && let Some(rest) = recorded.strip_prefix(&format!("{root}/"))
+        {
+            v.push(rest.to_owned());
         }
         if let Some(idx) = recorded.rfind("/./") {
             v.push(recorded[idx + 3..].to_owned());

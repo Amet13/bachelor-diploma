@@ -67,12 +67,12 @@ pub fn collect_macros(src: &str) -> HashMap<String, String> {
             i = k.max(at + 1);
             continue;
         }
-        if b.get(k) == Some(&b'{') {
-            if let Some(e) = group_end(b, k) {
-                out.insert(name.to_owned(), src[k + 1..e - 1].to_owned());
-                i = e;
-                continue;
-            }
+        if b.get(k) == Some(&b'{')
+            && let Some(e) = group_end(b, k)
+        {
+            out.insert(name.to_owned(), src[k + 1..e - 1].to_owned());
+            i = e;
+            continue;
         }
         i = k.max(at + 1);
     }

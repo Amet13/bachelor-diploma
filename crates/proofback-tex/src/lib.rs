@@ -312,12 +312,12 @@ impl Normalizer<'_> {
             match b {
                 b'%' => i = self.skip_comment(i, end),
                 b'\\' => {
-                    if let Some(stop) = stop {
-                        if self.src[i..end].starts_with("\\end") {
-                            let (name, after) = self.peek_env_name(i + 4, end);
-                            if name.as_deref() == Some(stop) {
-                                return after;
-                            }
+                    if let Some(stop) = stop
+                        && self.src[i..end].starts_with("\\end")
+                    {
+                        let (name, after) = self.peek_env_name(i + 4, end);
+                        if name.as_deref() == Some(stop) {
+                            return after;
                         }
                     }
                     i = self.control(i, end);
@@ -592,24 +592,24 @@ impl Normalizer<'_> {
                 Cmd::Nothing => eat_space(self, j),
             };
         }
-        if let Some(body) = self.opts.macros.get(&name) {
-            if self.depth < MAX_MACRO_DEPTH {
-                let body = body.clone();
-                let inner = {
-                    let mut sub = Normalizer {
-                        src: &body,
-                        opts: self.opts,
-                        out: Normalized::default(),
-                        depth: self.depth + 1,
-                    };
-                    sub.run(0, body.len(), None);
-                    sub.out.chars
+        if let Some(body) = self.opts.macros.get(&name)
+            && self.depth < MAX_MACRO_DEPTH
+        {
+            let body = body.clone();
+            let inner = {
+                let mut sub = Normalizer {
+                    src: &body,
+                    opts: self.opts,
+                    out: Normalized::default(),
+                    depth: self.depth + 1,
                 };
-                for c in inner {
-                    self.push(c, i..j);
-                }
-                return eat_space(self, j);
+                sub.run(0, body.len(), None);
+                sub.out.chars
+            };
+            for c in inner {
+                self.push(c, i..j);
             }
+            return eat_space(self, j);
         }
         // Unknown command: its rendering is unknowable from the source.
         self.push(PLACEHOLDER, i..j);
