@@ -4,7 +4,7 @@ on:
   pull_request:
     paths: ["site/**", "tools/**", "crates/**", "xtask/**", "npm/**", "fixtures/**", "Cargo.toml", "Cargo.lock", ".github/workflows/pages.yml"]
   push:
-    branches: [main, master]
+    branches: [main]
     paths: ["site/**", "tools/**", "crates/**", "xtask/**", "npm/**", "fixtures/**", "Cargo.toml", "Cargo.lock", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
