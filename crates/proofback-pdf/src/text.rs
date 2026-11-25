@@ -62,12 +62,12 @@ pub fn load_pdfium(hint: Option<&Path>) -> Result<Pdfium, Error> {
     if let Some(env) = std::env::var_os("PROOFBACK_PDFIUM") {
         candidates.push(PathBuf::from(env));
     }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            candidates.push(dir.to_path_buf());
-            candidates.push(dir.join("lib"));
-            candidates.push(dir.join("../lib"));
-        }
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(dir) = exe.parent()
+    {
+        candidates.push(dir.to_path_buf());
+        candidates.push(dir.join("lib"));
+        candidates.push(dir.join("../lib"));
     }
     let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/pdfium");
     candidates.push(workspace.join("lib"));

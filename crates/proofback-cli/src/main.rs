@@ -2,8 +2,10 @@
 //! source, track what you did about it, and send the answers back.
 
 mod commands;
+mod docx_cmd;
 mod extract;
 mod git;
+mod notes_cmd;
 mod output;
 mod triage;
 
@@ -43,7 +45,7 @@ pub enum Command {
         #[arg(long)]
         main: Option<String>,
     },
-    /// Import a review: an annotated PDF.
+    /// Import a review: an annotated PDF, a notes file, or (with --ai) a photo of handwritten marks.
     Import(ImportArgs),
     /// List items.
     List(ListArgs),
@@ -77,6 +79,15 @@ pub enum Command {
         force: bool,
         #[arg(long)]
         json: bool,
+    },
+    /// Accept the location of an item structured by an AI model.
+    Confirm { id: String },
+    /// Ask the configured AI model for a suggested edit (off by default; never applied automatically).
+    Suggest {
+        id: String,
+        /// Agree to send the previewed payload to the AI provider (recorded in the config).
+        #[arg(long)]
+        consent: bool,
     },
     /// Print a unified diff for replace, delete and insert items.
     Patch {
@@ -163,6 +174,7 @@ pub enum LetterFormat {
 }
 
 #[derive(Debug, Args)]
+#[allow(clippy::struct_excessive_bools)] // independent command-line flags
 pub struct ImportArgs {
     /// Annotated PDF.
     pub file: PathBuf,
@@ -181,6 +193,13 @@ pub struct ImportArgs {
     /// Ignore SyncTeX even if present (text-only mode).
     #[arg(long)]
     pub no_synctex: bool,
+    /// Use the configured AI model to structure messy notes or read a photo of
+    /// handwritten marks (off by default; see `[suggest]` in the config).
+    #[arg(long)]
+    pub ai: bool,
+    /// Agree to send the previewed payload to the AI provider (recorded in the config).
+    #[arg(long)]
+    pub consent: bool,
     #[arg(long)]
     pub json: bool,
 }

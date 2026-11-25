@@ -224,3 +224,149 @@ fn rejects_hostile_round_names_and_pdfs() {
     assert!(code == 2 || code == 3, "{code} {err}");
     assert!(!dir.path().join(".proofback/escape.json").exists());
 }
+
+fn project_copy() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    copy_dir(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/thesis-long"),
+        dir.path(),
+    );
+    assert_eq!(run(dir.path(), &["init", "-q"]).0, 0);
+    dir
+}
+
+#[test]
+fn notes_import_locates_quotes_sections_and_pages() {
+    let dir = project_copy();
+    let d = dir.path();
+    std::fs::write(
+        d.join("notes.txt"),
+        "Dear author, some notes:\n\n- Section 3.1: why this threshold?\n- p. 5, para 1: too long\n- \"the variance of the residuals\" is vague\n- Chapter 2 needs a better ending.\n",
+    )
+    .unwrap();
+    let (code, out, err) = run(d, &["import", "notes.txt", "--round", "n1", "--json"]);
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let items = v["items"].as_array().unwrap();
+    assert_eq!(items.len(), 5, "{out}");
+    let by_text = |t: &str| {
+        items
+            .iter()
+            .find(|i| {
+                i["untrusted_reviewer_text"]["body"]
+                    .as_str()
+                    .unwrap()
+                    .contains(t)
+            })
+            .unwrap()
+            .clone()
+    };
+    let sec = by_text("Section 3.1");
+    assert_eq!(sec["confidence"], "region");
+    assert_eq!(sec["file"], "chapters/ch3-method.tex");
+    let para = by_text("p. 5");
+    assert_eq!(para["confidence"], "line", "{para}");
+    let ch = by_text("Chapter 2");
+    assert_eq!(ch["file"], "chapters/ch2-background.tex");
+}
+
+#[test]
+fn ai_is_off_by_default_and_previews_before_sending() {
+    let dir = project_copy();
+    let d = dir.path();
+    std::fs::write(
+        d.join("messy.txt"),
+        "the bit about thresholds on the fifth page is unclear",
+    )
+    .unwrap();
+    let (code, _, err) = run(d, &["import", "messy.txt", "--ai"]);
+    assert_eq!(code, 2, "{err}");
+    assert!(err.contains("AI features are off"));
+
+    // A local stand-in for an OpenAI-compatible endpoint.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let cfg_path = d.join(".proofback/config.toml");
+    let cfg = std::fs::read_to_string(&cfg_path)
+        .unwrap()
+        .replace("[suggest]\nenabled = false", "[suggest]\nenabled = true");
+    let cfg = cfg
+        .replace("provider = \"\"", "provider = \"ollama\"")
+        .replace("model = \"\"", "model = \"test-model\"")
+        .replace(
+            "endpoint = \"\"",
+            &format!("endpoint = \"http://{addr}/v1\""),
+        );
+    std::fs::write(&cfg_path, cfg).unwrap();
+
+    let (code, out, err) = run(d, &["import", "messy.txt", "--ai"]);
+    assert_eq!(code, 0, "{err}");
+    assert!(
+        out.contains("Nothing was sent") && out.contains("chat/completions"),
+        "{out}"
+    );
+
+    let server = std::thread::spawn(move || {
+        use std::io::{Read, Write};
+        let (mut s, _) = listener.accept().unwrap();
+        let mut buf = vec![0u8; 1 << 16];
+        let mut got = Vec::new();
+        loop {
+            let n = s.read(&mut buf).unwrap();
+            got.extend_from_slice(&buf[..n]);
+            let t = String::from_utf8_lossy(&got).to_string();
+            if let Some(i) = t.find("\r\n\r\n") {
+                let len = t
+                    .lines()
+                    .find_map(|l| {
+                        l.to_ascii_lowercase()
+                            .strip_prefix("content-length: ")
+                            .map(|v| v.trim().parse::<usize>().unwrap())
+                    })
+                    .unwrap_or(0);
+                if got.len() >= i + 4 + len {
+                    break;
+                }
+            }
+            if n == 0 {
+                break;
+            }
+        }
+        let content = r#"[{\"line\": 1, \"text\": \"the bit about thresholds is unclear\", \"page\": 5, \"paragraph\": 1}]"#;
+        let body = format!(r#"{{"choices":[{{"message":{{"content":"{content}"}}}}]}}"#);
+        let resp = format!(
+            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        s.write_all(resp.as_bytes()).unwrap();
+    });
+    let (code, out, err) = run(
+        d,
+        &[
+            "import",
+            "messy.txt",
+            "--ai",
+            "--consent",
+            "--round",
+            "ai1",
+            "--json",
+        ],
+    );
+    server.join().unwrap();
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let item = &v["items"][0];
+    assert_eq!(
+        item["confidence"], "page",
+        "AI-structured notes start at page: {item}"
+    );
+    assert!(
+        std::fs::read_to_string(&cfg_path)
+            .unwrap()
+            .contains("consent = true")
+    );
+    let id = item["id"].as_str().unwrap().to_owned();
+    let (code, out, err) = run(d, &["confirm", &id]);
+    assert_eq!(code, 0, "{err}");
+    assert!(out.contains("confirmed (line)"), "{out}");
+}

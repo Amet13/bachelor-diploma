@@ -248,6 +248,10 @@ pub struct Anchor {
     pub confidence: Confidence,
     /// Human-readable explanation of the confidence level.
     pub reason: String,
+    /// Confidence the location would have once the author confirms it (used for
+    /// notes structured by an AI model).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending: Option<Confidence>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -455,6 +459,7 @@ mod tests {
                 state: AnchorState::Anchored,
                 confidence: Confidence::Exact,
                 reason: "test".into(),
+                pending: None,
             },
             origin: Origin::Pdf {
                 page: 1,

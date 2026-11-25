@@ -206,17 +206,17 @@ impl Project {
             )));
         }
         let full = self.root.join(rel_path);
-        if let Ok(meta) = std::fs::symlink_metadata(&full) {
-            if meta.file_type().is_symlink() {
-                return Err(Error::Refused(format!("{rel:?} is a symbolic link")));
-            }
+        if let Ok(meta) = std::fs::symlink_metadata(&full)
+            && meta.file_type().is_symlink()
+        {
+            return Err(Error::Refused(format!("{rel:?} is a symbolic link")));
         }
-        if let Ok(canon) = full.canonicalize() {
-            if !canon.starts_with(&self.root) {
-                return Err(Error::Refused(format!(
-                    "{rel:?} resolves outside the project"
-                )));
-            }
+        if let Ok(canon) = full.canonicalize()
+            && !canon.starts_with(&self.root)
+        {
+            return Err(Error::Refused(format!(
+                "{rel:?} resolves outside the project"
+            )));
         }
         Ok(full)
     }

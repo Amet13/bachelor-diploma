@@ -111,19 +111,19 @@ pub fn row(item: &Item) -> ItemRow {
 pub fn detail(item: &Item, sources: &Sources, context_lines: u32) -> ItemDetail {
     let mut excerpt = None;
     let mut context = Vec::new();
-    if let Some(t) = &item.target {
-        if let Some(src) = sources.get(&t.file) {
-            excerpt = src.text.get(t.range.as_range()).map(str::to_owned);
-            let first = t.line.saturating_sub(context_lines).max(1);
-            let last = (t.end_line + context_lines).min(src.line_count() as u32);
-            for l in first..=last {
-                if let Some(r) = src.line_range(l as usize) {
-                    context.push(ContextLine {
-                        line: l,
-                        text: src.text[r].to_owned(),
-                        in_target: l >= t.line && l <= t.end_line,
-                    });
-                }
+    if let Some(t) = &item.target
+        && let Some(src) = sources.get(&t.file)
+    {
+        excerpt = src.text.get(t.range.as_range()).map(str::to_owned);
+        let first = t.line.saturating_sub(context_lines).max(1);
+        let last = (t.end_line + context_lines).min(src.line_count() as u32);
+        for l in first..=last {
+            if let Some(r) = src.line_range(l as usize) {
+                context.push(ContextLine {
+                    line: l,
+                    text: src.text[r].to_owned(),
+                    in_target: l >= t.line && l <= t.end_line,
+                });
             }
         }
     }

@@ -121,6 +121,7 @@ pub fn import(input: &Input<'_>) -> Vec<Item> {
                 state: AnchorState::Anchored,
                 confidence: anchored.confidence,
                 reason: anchored.reason,
+                pending: None,
             },
             origin: Origin::Pdf {
                 page: a.page,
@@ -149,14 +150,14 @@ pub fn import(input: &Input<'_>) -> Vec<Item> {
                 None => break,
             }
         }
-        if let Some(&idx) = parent.and_then(|p| index_of.get(&p)) {
-            if !a.contents.trim().is_empty() {
-                items[idx].thread.push(Reply {
-                    author: author_name(&a.author).unwrap_or_else(|| "unknown".into()),
-                    body: a.contents.trim().to_owned(),
-                    at: a.created.clone().unwrap_or_default(),
-                });
-            }
+        if let Some(&idx) = parent.and_then(|p| index_of.get(&p))
+            && !a.contents.trim().is_empty()
+        {
+            items[idx].thread.push(Reply {
+                author: author_name(&a.author).unwrap_or_else(|| "unknown".into()),
+                body: a.contents.trim().to_owned(),
+                at: a.created.clone().unwrap_or_default(),
+            });
         }
     }
     items
@@ -233,12 +234,11 @@ fn anchor_one(
         "Text" | "FreeText" | "Caret" | "Stamp" | "FileAttachment" | "Sound"
     );
     // Caret: an insertion point between two characters.
-    if a.subtype == "Caret" {
-        if let Some(t) = text {
-            if let Some(r) = anchor_caret(input, a, b, t) {
-                return r;
-            }
-        }
+    if a.subtype == "Caret"
+        && let Some(t) = text
+        && let Some(r) = anchor_caret(input, a, b, t)
+    {
+        return r;
     }
     let marked: Option<MarkedText> = if is_point {
         text.and_then(|t| nearest_line_text(t, a))
@@ -246,15 +246,13 @@ fn anchor_one(
         text.and_then(|t| marked_text(t, &a.quads, a.rect, CONTEXT))
     };
     let mut points = sample_points(a, b);
-    if is_point {
-        if let (Some(t), Some(m)) = (text, &marked) {
-            // Anchor point notes on the text line next to them, not the margin.
-            if let Some(c) = t.chars.get(m.start) {
-                points = vec![b.to_top_left(
-                    f32::midpoint(c.bbox[0], c.bbox[2]),
-                    f32::midpoint(c.bbox[1], c.bbox[3]),
-                )];
-            }
+    if is_point && let (Some(t), Some(m)) = (text, &marked) {
+        // Anchor point notes on the text line next to them, not the margin.
+        if let Some(c) = t.chars.get(m.start) {
+            points = vec![b.to_top_left(
+                f32::midpoint(c.bbox[0], c.bbox[2]),
+                f32::midpoint(c.bbox[1], c.bbox[3]),
+            )];
         }
     }
     let cands = candidates(input, a.page, &points);
@@ -702,17 +700,16 @@ fn fallback(
     marked: String,
     why: &str,
 ) -> Anchored {
-    if let Some((f, line, _)) = cands.first() {
-        if let Some(src) = input.sources.get(f) {
-            if let Some(r) = src.line_range(*line as usize) {
-                return Anchored {
-                    target: Some(make_target(f, src, trim_range(&src.text, r))),
-                    confidence: Confidence::Line,
-                    reason: format!("{why}; SyncTeX line"),
-                    marked,
-                };
-            }
-        }
+    if let Some((f, line, _)) = cands.first()
+        && let Some(src) = input.sources.get(f)
+        && let Some(r) = src.line_range(*line as usize)
+    {
+        return Anchored {
+            target: Some(make_target(f, src, trim_range(&src.text, r))),
+            confidence: Confidence::Line,
+            reason: format!("{why}; SyncTeX line"),
+            marked,
+        };
     }
     Anchored {
         target: None,
