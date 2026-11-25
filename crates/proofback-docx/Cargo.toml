@@ -9,9 +9,9 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-proofback-anchor = { version = "0.0.0", path = "../proofback-anchor" }
-proofback-model = { version = "0.0.0", path = "../proofback-model" }
-proofback-tex = { version = "0.0.0", path = "../proofback-tex" }
+proofback-anchor = { version = "0.1.0", path = "../proofback-anchor" }
+proofback-model = { version = "0.1.0", path = "../proofback-model" }
+proofback-tex = { version = "0.1.0", path = "../proofback-tex" }
 quick-xml = "0.42.0"
 serde_json = "1.0.154"
 thiserror = "2.0.21"

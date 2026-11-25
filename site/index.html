@@ -47,10 +47,10 @@
       <div class="intro-side">
         <p>Your supervisor marked up the PDF. proofback finds the file, line and characters in your LaTeX that each mark refers to, keeps track of what you did about it, and sends your answers back.</p>
         <p class="actions">
-          <a class="btn" href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Read the plan</a>
+          <a class="btn" href="app/">Open the browser app</a>
           <a class="textlink" href="https://github.com/Amet13/proofback">Source on GitHub</a>
         </p>
-        <p class="status">Design phase. Nothing to install yet.</p>
+        <p class="status">v0.1.0. The browser app runs on your machine and uploads nothing. Prefer a terminal? <a href="https://github.com/Amet13/proofback#install">Install the CLI</a>.</p>
       </div>
     </section>
 
@@ -134,8 +134,8 @@
         <p>The core is plain, repeatable code that runs offline. Agents use it through an MCP server: they get each item with its source range and context, propose a patch, and record a reply.</p>
         <p>An agent can't mark an item done unless the text it points to has actually changed. Every command has <code>--json</code> output and a published schema. Built-in AI suggestions are optional and use your own model.</p>
       </div>
-      <figure class="term" aria-label="Example agent session (planned for v0.3)">
-        <figcaption>agent session · planned for v0.3</figcaption>
+      <figure class="term" aria-label="Example agent session">
+        <figcaption>agent session · proofback mcp</figcaption>
 <pre><span class="u">&gt;</span> work through the open proofback items in chapter 3
 
 <span class="a">list_items</span>     <span class="d">status=open file=chapters/*</span>
@@ -153,15 +153,15 @@
     </section>
 
     <section class="accuracy" id="accuracy" aria-labelledby="acc-title">
-      <h2 id="acc-title">Accuracy, measured every release</h2>
-      <p class="lead">CI builds a set of realistic theses and papers, annotates them the way each PDF app actually writes annotations, and checks where proofback lands. A release that does worse than the last one doesn't ship. The first numbers arrive with v0.1.</p>
+      <h2 id="acc-title">Accuracy, measured on every change</h2>
+      <p class="lead">CI builds a set of realistic theses and papers, annotates them the way each PDF app actually writes annotations, and checks where proofback lands. A change that pushes wrong anchors above 1% or exact matches below 90% fails the build. A 322-page thesis with 500 notes imports in about 0.3 seconds.</p>
       <table class="tbl tbl-num">
         <thead><tr><th scope="col">Measure</th><th scope="col">With SyncTeX</th><th scope="col">Text only</th></tr></thead>
         <tbody>
-          <tr><td>Exact character range</td><td>not yet measured</td><td>not yet measured</td></tr>
-          <tr><td>Correct line</td><td>not yet measured</td><td>not yet measured</td></tr>
-          <tr><td>Page only (needs a human)</td><td>not yet measured</td><td>not yet measured</td></tr>
-          <tr><td>300 pages, 500 notes</td><td>target under 1 s</td><td>target under 3 s in a browser</td></tr>
+          <tr><td>Exact character range</td><td>97.8%</td><td>43.3%</td></tr>
+          <tr><td>Correct line</td><td>99.6%</td><td>95.3%</td></tr>
+          <tr><td>Wrong place</td><td>0.4%</td><td>0%</td></tr>
+          <tr><td>Page only (needs a human)</td><td>0%</td><td>4.7%</td></tr>
         </tbody>
       </table>
     </section>
@@ -170,13 +170,14 @@
       <h2 id="road-title">Roadmap</h2>
       <ol class="road">
         <li class="done"><b>M0</b> Plan and website</li>
-        <li><b>v0.1</b> PDF import, anchoring, <code>list</code></li>
-        <li><b>v0.2</b> Resolve, patch, sync, answered PDF, response letter</li>
-        <li><b>v0.3</b> MCP server, agent kit, GitHub Action</li>
-        <li><b>v0.4</b> Browser app (WebAssembly), npm package</li>
-        <li><b>v0.5</b> Email notes, optional AI suggestions</li>
-        <li><b>v0.6</b> Word round trip</li>
-        <li><b>later</b> VS Code extension, Typst, schema 1.0</li>
+        <li class="done"><b>v0.1</b> PDF import, anchoring, <code>list</code></li>
+        <li class="done"><b>v0.2</b> Resolve, patch, sync, answered PDF, response letter</li>
+        <li class="done"><b>v0.3</b> MCP server, agent kit, GitHub Action</li>
+        <li class="done"><b>v0.4</b> Browser app (WebAssembly), npm package</li>
+        <li class="done"><b>v0.5</b> Email notes, optional AI suggestions</li>
+        <li class="done"><b>v0.6</b> Word round trip</li>
+        <li class="done"><b>v0.7, v0.8</b> VS Code extension, Typst</li>
+        <li><b>v1.0</b> First release, schema 1.0, public accuracy report</li>
       </ol>
     </section>
   </main>

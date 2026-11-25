@@ -10,11 +10,11 @@ publish.workspace = true
 
 [dependencies]
 pdfium-render = { version = "0.9.6", default-features = false, features = ["pdfium_latest"] }
-proofback-anchor = { version = "0.0.0", path = "../proofback-anchor" }
-proofback-model = { version = "0.0.0", path = "../proofback-model" }
-proofback-pdf = { version = "0.0.0", path = "../proofback-pdf" }
-proofback-synctex = { version = "0.0.0", path = "../proofback-synctex" }
-proofback-tex = { version = "0.0.0", path = "../proofback-tex" }
+proofback-anchor = { version = "0.1.0", path = "../proofback-anchor" }
+proofback-model = { version = "0.1.0", path = "../proofback-model" }
+proofback-pdf = { version = "0.1.0", path = "../proofback-pdf" }
+proofback-synctex = { version = "0.1.0", path = "../proofback-synctex" }
+proofback-tex = { version = "0.1.0", path = "../proofback-tex" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 

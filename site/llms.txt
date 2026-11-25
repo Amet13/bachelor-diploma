@@ -1,16 +1,18 @@
 # proofback
 
-> proofback maps reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, notes; later email notes and Word tracked changes) to the exact file, line and character range of the LaTeX source. It tracks each item's status and replies across drafts in `.proofback/` inside the author's repository, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native and WebAssembly). AI agents use it through an MCP server; reviewer text is returned as untrusted data. Status: plan final, implementation not started, nothing to install yet.
+> proofback maps reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, notes, email notes, Word tracked changes and comments) to the exact file, line and character range of the LaTeX (or Typst) source. It tracks each item's status and replies across drafts in `.proofback/` inside the author's repository, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native and WebAssembly). AI agents use it through an MCP server; reviewer text is returned as untrusted data. Status: v0.1.0; CLI, MCP server, browser app at /app, npm package and VS Code extension implemented.
 
 ## Docs
 
 - [Project plan](https://github.com/Amet13/proofback/blob/main/docs/PLAN.md): scope, architecture, matching pipeline, data model, command reference, security, performance, roadmap, decision log
+- [Agent guide](https://github.com/Amet13/proofback/blob/main/docs/agents.md): MCP tools, guard rails, JSON output
+- [Browser app](https://amet13.github.io/proofback/app/)
 - [README](https://github.com/Amet13/proofback/blob/main/README.md)
 - [Security policy](https://github.com/Amet13/proofback/blob/main/SECURITY.md)
 
-## Planned interfaces
+## Interfaces
 
-- CLI: `proofback init|import|list|show|triage|resolve|patch|apply|sync|answer|letter|inline|sarif|stats|mcp|doctor`, `--json` on every command, exit codes 0 to 4
+- CLI: `proofback init|import|list|show|triage|resolve|confirm|suggest|patch|apply|sync|answer|letter|inline|docx export|sarif|stats|mcp|doctor|schema`, `--json` on every command, exit codes 0 to 4
 - MCP tools (stdio): list_items, get_item, propose_patch, apply_patch, resolve_item, sync, export
 - Item IDs: `pb_` plus base32, unique prefixes accepted
 

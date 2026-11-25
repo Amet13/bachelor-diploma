@@ -9,7 +9,7 @@ to, tracks what the author did about it across drafts, and sends the answers bac
 
 | | |
 |---|---|
-| Status | Plan final (v1.0 of this document). Implementation starts at M1. |
+| Status | Implemented through M8 (v1.1 of this document). Deviations from v1.0 and measured results: [§21](#21-implementation-notes). |
 | Website | <https://amet13.github.io/proofback/> |
 | Licence | MIT OR Apache-2.0 |
 | Decisions | Numbered `D-xx`, collected in [§20](#20-decision-log) |
@@ -171,30 +171,35 @@ crates/
   proofback-store     .proofback/ files, rounds, sync
   proofback-emit      list, patch, answered PDF, letter, SARIF, review comments
   proofback-notes     free-text notes (v0.5)
+  proofback-ai        optional model calls for `suggest` and notes (v0.5)
   proofback-docx      Word export and import (v0.6)
+  proofback-typst     Typst projects through the embedded Typst compiler (v0.8)
   proofback-cli       clap CLI and ratatui triage
-  proofback-mcp       MCP server (rmcp)
+  proofback-mcp       MCP server (own JSON-RPC over stdio)
   proofback-wasm      wasm-bindgen bindings for browser and npm
-site/                 website and, from v0.4, the browser app
+  proofback-corpus    synthetic corpus, accuracy gates and performance test
+xtask/                schema, fixtures, pinned pdfium, WebAssembly and npm builds
+site/                 website and the browser app (/app)
 fixtures/             golden corpus
-docs/                 plan, ADRs, schema, command reference
+integrations/         agent kit and VS Code extension
+npm/                  npm package (Node)
+docs/                 plan, agent guide, GitHub Action guide
 ```
 
 ### 4.3 PDF layer (D-05)
 
-pdfium through `pdfium-render`, on both native and WebAssembly:
+Two libraries, each used for what it does best (changed from v1.0, see §21):
 
-- reads Highlight, Underline, StrikeOut, Squiggly, Text (sticky note), FreeText,
+- `lopdf` (pure Rust) reads Highlight, Underline, StrikeOut, Squiggly, Text (sticky note), FreeText,
   Caret, Ink, Square, Circle and Line annotations with QuadPoints, Rect, Contents,
-  RichContents, author, dates, colour, `/NM` and reply chains (`/IRT`);
-- returns per-character boxes, so the text under a highlight is known even when the
-  annotating app did not store it;
-- writes annotations, which `answer` needs.
+  RichContents, author, dates, colour, `/NM` and reply chains (`/IRT`), and writes
+  the reply annotations and metadata stripping that `answer` needs;
+- pdfium through `pdfium-render` returns per-character boxes, so the text under a
+  highlight is known even when the annotating app did not store it.
 
 pdfium is Apache-2.0/BSD. Native builds bundle a pinned prebuilt pdfium (checksum
-verified in CI; see §10). The browser loads pdfium's WebAssembly build on demand.
-A pure-Rust fallback (`lopdf` plus own text extraction) stays possible behind the
-`proofback-pdf` trait but is not planned for v1.
+verified; see §10). The browser loads pdfium's WebAssembly build on demand. Without
+pdfium, import falls back to the text stored in the annotations.
 
 ### 4.4 SyncTeX layer (D-06)
 
@@ -224,8 +229,8 @@ the small window SyncTeX has already found.
 
 ### 4.6 Source text rules
 
-- Sources are read as UTF-8. Files in another encoding are detected; anchoring still
-  works but `apply` refuses to write them unless `--encoding` is given.
+- Sources are read as UTF-8. Files in another encoding are reported by `doctor` and
+  skipped (never written).
 - Line endings are preserved on write (LF or CRLF per file).
 - Canonical positions are UTF-8 byte ranges. Lines are 1-based. Columns are 1-based
   Unicode code points. The MCP server and VS Code extension convert to UTF-16 where
@@ -372,7 +377,7 @@ it in `$schema` and carries `schema_version`.
 | `apply [ids]` | Write those edits (refuses if the anchored text changed since import) |
 | `sync` | Re-anchor items to the current source |
 | `answer -o <pdf>` | Reviewer's PDF with a reply annotation on every note |
-| `letter` | Response letter as LaTeX, Markdown or DOCX |
+| `letter` | Response letter as LaTeX or Markdown |
 | `inline` | Optional `% proofback pb_xxx:` comments or `\todo{}` in the source |
 | `sarif` | SARIF for GitHub code scanning |
 | `stats` | Counts by round, status, file and reviewer |
@@ -429,7 +434,7 @@ Principle: **the core is deterministic and offline; AI is a client, not a depend
 | Markdown | GitHub task list, one line per item with a link to file and line |
 | Unified diff | Standard `git apply` format |
 | Answered PDF | New file; the original is never modified; status and reply added as replies to each note |
-| Response letter | LaTeX, Markdown, DOCX; quotes the reviewer, states the change, links the commit |
+| Response letter | LaTeX, Markdown; quotes the reviewer, states the change, links the commit |
 | SARIF 2.1.0 | For code scanning annotations in pull requests |
 | Review comments | Through the GitHub Action |
 
@@ -448,10 +453,10 @@ the author's source. The threat model:
 | Path traversal (SyncTeX paths, `\input`, zip entries, `--at` checkouts) | Every path is canonicalised and must stay inside the project root; symlinks leaving the root are refused. |
 | Unwanted writes | Only `apply`, `inline` and `resolve` write. `apply` checks the anchored text is unchanged and never writes outside the root. `--dry-run` everywhere. |
 | Prompt injection through reviewer comments | Reviewer text is marked untrusted in JSON and MCP output; the agent kit tells agents to treat it as data; proofback exposes no tool that runs commands. |
-| Leaking source to an AI provider | `suggest` is off by default, needs per-project consent, shows the payload, and reads API keys from the environment or the OS keychain, never from committed files. |
+| Leaking source to an AI provider | `suggest` is off by default, needs per-project consent, shows the payload, and reads API keys from an environment variable named in the config, never from committed files. |
 | Reviewer identity in blind review | `--anonymize-authors` on import; `answer` and `letter` strip PDF metadata (author, creator tool, local paths). |
 | GitHub Action abuse | Runs on `pull_request` with a read-only token by default; posting comments uses a separate `workflow_run` job; all third-party actions pinned by commit SHA; least-privilege `permissions`. |
-| Supply chain | `cargo-deny` (licences, advisories, sources), `cargo-vet` for new dependencies, Dependabot, reproducible release builds, Sigstore-signed artefacts with SLSA build provenance, npm provenance, pinned pdfium binaries with checksums. |
+| Supply chain | `cargo-deny` (licences, advisories, sources) in CI, Dependabot, release artefacts with SHA-256 checksums and signed build provenance (GitHub attestations), npm provenance, pinned pdfium binaries with checksums. |
 | Website | No third-party requests (fonts self-hosted), Content Security Policy, no cookies or analytics. |
 
 Vulnerabilities are reported privately through GitHub security advisories
@@ -478,11 +483,12 @@ How:
 - SyncTeX is streamed and indexed by page; only pages that carry annotations are
   fully decoded.
 - PDF text is extracted only for annotated pages.
-- Pages are processed in parallel with `rayon` natively; in the browser, the worker
-  processes them in order and reports progress.
+- Pages are processed in order, in one pass; the budget is met without threads. In
+  the browser this runs in a Web Worker.
 - Indexes are cached by content hash in `.proofback/cache/`.
 - pdfium's WebAssembly build is fetched only when a PDF is dropped and then cached.
-- Criterion benchmarks run in CI; a regression above 10% fails the build.
+- A performance test in CI (`crates/proofback-corpus/tests/perf.rs`) generates the
+  reference input and fails when a budget is exceeded.
 
 ---
 
@@ -512,9 +518,9 @@ How:
 ## 13. Browser app (v0.4)
 
 - Lives at `/app` on the website. Loads the core in a Web Worker and pdfium on demand.
-- Inputs: annotated PDF, `.synctex.gz`, and sources as a folder (File System Access
-  API in Chromium, `<input webkitdirectory>` elsewhere) or a zip such as Overleaf's
-  download. The Overleaf location of the SyncTeX file is documented once verified
+- Inputs: annotated PDF, `.synctex.gz`, and sources as a folder
+  (`<input webkitdirectory>`, which every current browser supports) or a zip such as
+  Overleaf's download. The Overleaf location of the SyncTeX file is documented once verified
   against the current Overleaf UI.
 - Layout: reviewer's PDF with numbered marks, item list, source with the anchored
   range highlighted. Keyboard first: `j`/`k` move, `d` done, `w` won't fix, `r` reply.
@@ -527,8 +533,8 @@ How:
 
 Mapping Word edits back is solved at export time:
 
-- `docx export` builds the DOCX with make4ht (best fidelity) or pandoc and embeds a
-  hidden bookmark per paragraph carrying the source byte range.
+- `docx export` builds the DOCX with its own writer (no dependencies) or pandoc and
+  embeds a hidden bookmark per paragraph carrying the source byte range.
 - `import` reads tracked changes (`w:ins`, `w:del`), comments
   (`comments.xml`, `commentRangeStart`/`End`) and replies straight from the XML, and
   resolves them through the nearest bookmarks and the §5 alignment. DOCX items are
@@ -559,15 +565,15 @@ Mapping Word edits back is solved at export time:
 
 | Milestone | Scope | Exit criteria |
 |---|---|---|
-| **M0** | Repository reset, plan, website, Pages deploy | Site live, plan final |
-| **M1 Foundations** | Workspace, `model`, `synctex`, `tex` offset map, fixture builder in CI, fuzzing harness | SyncTeX parser fuzzed for 1 CPU-hour without crashes; offset-map property tests green |
-| **M2 = v0.1 Import** | `pdf`, `anchor`, `init`, `import`, `list`, `show`, `doctor` | Synthetic corpus with SyncTeX: exact-range recall at least 90%, wrong-anchor rate under 1%; performance budgets met |
-| **M3 = v0.2 Close the loop** | `store`, `triage`, `resolve`, `patch`, `apply`, `sync`, `answer`, `letter`; release pipeline (dist, Homebrew, signed artefacts) | A full review round done end to end on a fixture thesis |
-| **M4 = v0.3 Agents and CI** | MCP server, agent kit, GitHub Action, SARIF | An agent completes a review round on fixtures in an automated eval |
-| **M5 = v0.4 Browser** | WebAssembly build, `/app`, npm package | Browser results identical to native on the corpus |
-| **M6 = v0.5 Notes** | Notes parser, optional `suggest` | Notes corpus: wrong-anchor rate under 1% |
-| **M7 = v0.6 Word** | DOCX export with anchors, DOCX import | Round trip on fixtures: exact-range recall at least 90% |
-| **M8 = v0.7, v0.8** | VS Code extension, Typst | Same golden suite passes for Typst fixtures |
+| **M0** ✓ | Repository reset, plan, website, Pages deploy | Site live, plan final |
+| **M1 Foundations** ✓ | Workspace, `model`, `synctex`, `tex` offset map, fixture builder in CI, fuzzing harness | SyncTeX parser fuzzed for 1 CPU-hour without crashes; offset-map property tests green |
+| **M2 = v0.1 Import** ✓ | `pdf`, `anchor`, `init`, `import`, `list`, `show`, `doctor` | Synthetic corpus with SyncTeX: exact-range recall at least 90%, wrong-anchor rate under 1%; performance budgets met |
+| **M3 = v0.2 Close the loop** ✓ | `store`, `triage`, `resolve`, `patch`, `apply`, `sync`, `answer`, `letter`; release pipeline (GitHub Releases, installers, Homebrew formula, build provenance) | A full review round done end to end on a fixture thesis |
+| **M4 = v0.3 Agents and CI** ✓ | MCP server, agent kit, GitHub Action, SARIF | An agent completes a review round on fixtures in an automated eval |
+| **M5 = v0.4 Browser** ✓ | WebAssembly build, `/app`, npm package | Browser results identical to native on the corpus |
+| **M6 = v0.5 Notes** ✓ | Notes parser, optional `suggest` | Notes corpus: wrong-anchor rate under 1% |
+| **M7 = v0.6 Word** ✓ | DOCX export with anchors, DOCX import | Round trip on fixtures: exact-range recall at least 90% |
+| **M8 = v0.7, v0.8** ✓ | VS Code extension, Typst | Same golden suite passes for Typst fixtures |
 | **v1.0** | Schema v1 frozen, documentation complete, accuracy report public | No open security advisories; all gates green |
 
 ---
@@ -578,8 +584,8 @@ Mapping Word edits back is solved at export time:
 - Semantic versioning for the tool; the JSON schema is versioned separately.
 - CI: lint, test, golden accuracy, benchmarks, fuzz smoke run, WebAssembly build,
   site checks, Pages deploy. Every third-party action pinned by commit SHA.
-- Releases with `dist` (formerly cargo-dist): GitHub Releases, shell and PowerShell
-  installers, Homebrew tap, crates.io, npm.
+- Releases from a tag through `.github/workflows/release.yml`: GitHub Releases with
+  checksums and provenance, shell and PowerShell installers, a Homebrew formula, npm.
 - Conventional commits; changelog generated at release.
 - Licence MIT OR Apache-2.0 (D-11). Fixtures CC BY 4.0. Bundled fonts SIL OFL 1.1.
 - Docs are written for people and agents: each command has a runnable example and
@@ -665,3 +671,57 @@ current tooling before being marked final. Each finding and its resolution:
 | D-15 | Exit codes 0 to 4 as in §7 |
 | D-16 | Threat model and mitigations in §10 are requirements, not aspirations |
 | D-17 | Performance budgets in §11 are CI-enforced |
+
+---
+
+## 21. Implementation notes
+
+Status as of 2026-11-25: M1 to M8 are implemented and tested. v1.0 waits for the first
+tagged release and the public accuracy report.
+
+### 21.1 Measured results
+
+All numbers come from the tests in `crates/proofback-corpus` and the crates' own test
+suites, run in CI on every pull request.
+
+| Corpus | Items | Exact | Wrong | Gate |
+|---|---|---|---|---|
+| LaTeX PDF annotations, with SyncTeX | 256 | 97.8% (line 99.6%) | 0.4% | exact at least 90%, wrong under 1% |
+| LaTeX PDF annotations, text only | 256 | 43.3% (line 95.3%, page 4.7%) | 0% | wrong under 1% |
+| Notes in an email | 150 | 100 exact, 50 region | 0 | wrong under 1% |
+| Word round trip | 60 | 60 | 0 | exact at least 90% |
+| Typst | 120 | 120 | 0 | same as LaTeX |
+| Browser and npm against native | 40 | identical | | identical |
+
+Performance on the reference input (322 pages, 500 notes): cold import 310 ms, warm
+import 42 ms, sync 0.2 ms, peak memory 99 MB. All within §11.
+
+### 21.2 Changes from v1.0 of the plan
+
+| Area | v1.0 said | Implemented | Why |
+|---|---|---|---|
+| MSRV | pinned, unspecified | Rust 1.92 | Required by the embedded Typst compiler |
+| PDF layer | pdfium for everything | `lopdf` for annotations and writing, pdfium for text boxes | Pure-Rust annotation code is easier to fuzz and works without pdfium |
+| MCP | `rmcp` | Own JSON-RPC over stdio (spec 2025-11-25, older versions negotiated) | Small surface, no async runtime, fully tested |
+| Benchmarks | Criterion, fail on 10% regression | Budget test in CI | Shared runners are too noisy for a 10% threshold |
+| Parallelism | `rayon` | Single pass | Budgets met with large margin; same code path as WebAssembly |
+| Releases | `dist` | Own release workflow | Needed custom steps (pdfium, provenance, Homebrew, npm) |
+| Supply chain | `cargo-vet`, Sigstore | `cargo-deny`, GitHub build attestations | Same guarantees with less maintenance |
+| API keys | environment or OS keychain | environment variable named in config | No native keychain dependency |
+| Encodings | `--encoding` flag | Non-UTF-8 sources skipped and reported | Rare in practice; never writes a file it cannot round-trip |
+| Response letter | LaTeX, Markdown, DOCX | LaTeX, Markdown | Markdown converts to DOCX with pandoc if needed |
+| Word export | make4ht or pandoc | Built-in writer or pandoc | No TeX tool needed at export time |
+| Browser folders | File System Access API with fallback | `webkitdirectory` everywhere, plus zip | One path that works in every browser |
+| Typst | `typst-ide` jump API | Embedded compiler with a glyph to source span index | Character-level precision, no extra dependency |
+| Corpus | about 15 TeX Live projects | 3 pdflatex fixtures plus 1 Typst project with synthetic annotations | Grows with donated real-world reviews |
+
+### 21.3 Additional audit findings during implementation
+
+| # | Area | Finding | Resolution |
+|---|---|---|---|
+| 33 | Correctness | Sticky notes anchored to the wrong line | Anchor point is the icon's top-left corner |
+| 34 | Correctness | Items reported `lost` after a replacement edit | Sync moves them to the nearest changed location |
+| 35 | Correctness | TeX normaliser span bugs found by property tests | Fixed; regressions kept in `proptest-regressions` |
+| 36 | Portability | Windows checkouts converted fixture line endings | `.gitattributes` keeps fixtures byte-exact; paragraph splitting accepts CRLF |
+| 37 | Supply chain | `zip` advisories in an older version | Upgraded to `zip` 9.7.3; two Typst-only `quick-xml` advisories ignored with reasons |
+
