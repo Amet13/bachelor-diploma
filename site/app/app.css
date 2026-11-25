@@ -8,7 +8,7 @@
 .setup h1 { font-size: clamp(32px, 4vw, 48px); max-width: none; margin-bottom: 24px; }
 .steps-form { list-style: none; counter-reset: s; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
 .steps-form li { counter-increment: s; padding: 18px 0 18px 44px; border-bottom: 1px solid var(--line); position: relative; }
-.steps-form li::before { content: counter(s); position: absolute; left: 0; top: 16px; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); color: #15171a; display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+.steps-form li::before { content: counter(s); position: absolute; left: 4px; top: 15px; font: 700 22px/1 var(--tex); color: var(--blue); }
 .steps-form label { font-weight: 700; display: block; }
 .opt { font-weight: 400; color: var(--muted); font-size: 14px; margin-left: 6px; }
 .hint { margin: 2px 0 10px; color: var(--muted); font-size: 15px; }
@@ -71,3 +71,4 @@ button.btn { border: 1px solid var(--yellow-edge); }
 @media (max-width: 640px) {
   .app main { padding: 0 16px 32px; }
 }
+.intro-hint { margin: -12px 0 22px; }

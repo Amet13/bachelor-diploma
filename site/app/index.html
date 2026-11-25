@@ -17,28 +17,29 @@
   <header class="top">
     <a class="brand" href="../">proofback</a>
     <nav aria-label="App">
-      <span class="local-note">Runs in this browser. Files are never uploaded.</span>
+      <span class="local-note">Everything stays on this computer.</span>
       <a href="https://github.com/Amet13/proofback">GitHub</a>
     </nav>
   </header>
 
   <main id="main">
     <section id="setup" class="setup" aria-labelledby="setup-title">
-      <h1 id="setup-title">Import a review</h1>
+      <h1 id="setup-title">Open a review</h1>
+      <p class="hint intro-hint">Three files, all read here in the browser. Nothing is sent anywhere, so this works offline too.</p>
       <ol class="steps-form">
         <li>
           <label for="pdf-input">Annotated PDF</label>
-          <p class="hint">The PDF your reviewer marked up, from any PDF app.</p>
+          <p class="hint">The PDF with your reviewer’s marks on it, from whatever app they used.</p>
           <input id="pdf-input" type="file" accept="application/pdf,.pdf">
         </li>
         <li>
           <label for="synctex-input">SyncTeX file <span class="opt">optional, recommended</span></label>
-          <p class="hint"><code>main.synctex.gz</code> from the build the reviewer read. Without it, matching is text only and less precise.</p>
+          <p class="hint"><code>main.synctex.gz</code> from the build the reviewer read. LaTeX writes it next to the PDF when SyncTeX is on. Without it, more marks land on the right line rather than the exact words.</p>
           <input id="synctex-input" type="file" accept=".gz,.synctex">
         </li>
         <li>
           <label for="dir-input">LaTeX sources</label>
-          <p class="hint">Choose the project folder, or a <code>.zip</code> such as Overleaf's download (it may contain the PDF and SyncTeX file too).</p>
+          <p class="hint">The project folder, or the source <code>.zip</code> you can download from Overleaf. If the zip also holds the PDF and SyncTeX file, you can skip the first two.</p>
           <div class="pick">
             <input id="dir-input" type="file" webkitdirectory multiple aria-label="Project folder">
             <span>or</span>
@@ -47,8 +48,8 @@
         </li>
       </ol>
       <div class="setup-actions">
-        <label class="check"><input id="anon" type="checkbox"> Replace reviewer names with "Reviewer 1", "Reviewer 2"</label>
-        <button id="import-btn" class="btn" type="button" disabled>Import</button>
+        <label class="check"><input id="anon" type="checkbox"> Replace reviewer names with “Reviewer 1”, “Reviewer 2”</label>
+        <button id="import-btn" class="btn" type="button" disabled>Match the marks</button>
         <p id="setup-status" class="status-line" role="status" aria-live="polite"></p>
       </div>
     </section>

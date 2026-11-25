@@ -2,21 +2,22 @@
 
 **Every margin note, back in your source.**
 
-Your supervisor, co-author or reviewer marked up the PDF. proofback finds the exact
-**file, line and characters** in your LaTeX source that each highlight, strike-out,
-caret and note refers to, tracks what you did about it across drafts, and sends the
-answers back: the reviewer's own PDF with a reply on every note, or a response letter.
+Your supervisor sent the PDF back with forty-seven marks on chapter 3. proofback
+reads them and tells you, for each one, the file, line and characters in your LaTeX
+source it refers to. It keeps a record of what you changed and what you didn't (and
+why), and writes your replies back into the reviewer's own PDF or a response letter.
 
-> **Status: v0.1.0, all planned milestones implemented.** Website and browser app:
-> <https://amet13.github.io/proofback/>. Plan and decision log: [`docs/PLAN.md`](docs/PLAN.md).
+Version 0.1.0. Website and browser app: <https://amet13.github.io/proofback/>.
+Design notes and decision log: [`docs/PLAN.md`](docs/PLAN.md).
 
-## Why
+## Why this exists
 
-Reviewers don't edit `.tex`. They annotate PDFs in Acrobat, Preview, Zotero or on a
-tablet, or send an email of page numbers. Authors then hunt for every mark by hand,
-lose some, and write replies that drift from what changed. Existing tools either
-extract annotations without source locations, jump to one location at a time,
-regenerate your source from Word, or require every reviewer to join a platform.
+Reviewers don't edit `.tex` files. They mark up the PDF in Acrobat, Preview, Zotero
+or on a tablet, or they send an email full of page numbers. You then search for each
+sentence by hand across a tree of `\input` files, miss a few, and write replies that
+no longer match what you changed. The tools that exist pull annotations out without
+saying where they belong in the source, jump to one location at a time, rebuild your
+source from Word, or ask every reviewer to sign up for a platform.
 
 ## Install
 
@@ -52,15 +53,15 @@ proofback resolve pb_3xq1fd --status discuss --reply "Chosen by 5-fold CV, see 3
 proofback answer -o review-ch3-answered.pdf
 ```
 
-- **Precise.** SyncTeX narrows each mark to a few lines; a TeX-aware aligner finds the
-  characters. Precision comes first: proofback says "page only" rather than guess.
-- **Git-native.** State lives in `.proofback/` in your repository, and anchors follow
-  your edits into the next draft.
-- **Agent-ready.** `--json` everywhere, a published schema, an MCP server and an agent
-  kit. Reviewer text is passed to agents as untrusted data. AI is optional.
-- **Local and safe.** Rust core, native and WebAssembly. The browser app runs on your
-  machine; nothing is uploaded. Untrusted PDFs and archives are parsed with limits.
-- **Measured.** Accuracy and performance are checked in CI and published per release.
+SyncTeX narrows each mark to a few lines and a TeX-aware aligner finds the
+characters. When proofback isn't sure, it says "line" or "page only" instead of
+guessing; a confident wrong answer is the one thing it is built to avoid.
+
+The record lives in `.proofback/` next to your sources, so it is versioned with them,
+and `sync` carries every item into the next draft. Each command takes `--json`; the
+schema is published, and an MCP server lets a coding agent work through the list with
+you. Reviewer text reaches the agent marked as untrusted. The core makes no network
+calls, and the browser app reads your files without uploading them.
 
 ## More inputs
 
