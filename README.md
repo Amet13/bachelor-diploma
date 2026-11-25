@@ -1,97 +1,77 @@
-bachelor-diploma
-================
-Дипломная работа бакалавра в LaTeX, оформленная в соответствии с нормоконтролем Севастопольского государственного университета в 2015 году
+# proofback
 
-Диплом магистра с некоторыми исправлениями и дополнениями тут: https://github.com/Amet13/master-thesis
+**Every margin note, back in your source.**
 
-Особенности
------------
-* использование XeLaTeX, основной шрифт Times New Roman, 14pt, полуторный межстрочный интервал
-* подрисуночные и подтабличные записи в формате `номерСекции.номерРисунка`
-* нумерация страниц справа сверху
-* возможность указания начала нумерации страниц
-* возможность настройки отступов страниц
-* маркировка списка символом `—`
-* нумерованные списки обозначаются строчными буквами кириллицы со скобкой
-* названия секций в верхнем регистре, включая содержание
-* отступ в одну строку после имени заголовка
-* отступы в одну строку до и после имени заголовков второго и третьего уровней
-* пользовательские функции добавления рисунков, приложений и библиографии
-* использование `listings` для оформления исходного кода в документе, шрифт FreeMono
-* возможность добавления своих PDF в документ
-* добавление библиографии в файл `0-bibliography.tex`
-* чертежи и плакаты в формате А1
-* бланки задания, пояснительной записки, акта внедрения
-* доклад, представляемый на защите диплома
-* `Makefile` для компиляции и сборки проекта
+Your supervisor (or co-author, or reviewer 2) marked up the PDF. proofback lands
+each highlight, strike-out, caret and sticky note on the exact **file, line and
+character range** of your LaTeX source, tracks what you did about it across drafts,
+and sends the answers back — as the reviewer's own PDF with a reply on every note, or
+as a response-to-reviewers letter.
 
-Структура исходников
---------------------
-Структура каталогов:
-```
-.
-├── extra
-│   ├── drafts
-│   └── posters
-├── images
-│   ├── infrastructure
-│   ├── testing
-│   └── userguide
-└── inc
-    └── ddos-deflate
-```
+> **Status: in design.** Nothing to install yet. The full plan — scope, architecture,
+> matching pipeline, data model, roadmap and decision log — is in
+> [`docs/PLAN.md`](docs/PLAN.md). Website: <https://amet13.github.io/proofback/>
 
-В корневом каталоге `.` находится файл `main.tex`.
-В `main.tex` подключается все, включая преамбулу, титульный лист, приложения и т.д.
+## Why
 
-В каталоге `extra/` находятся подключаемые PDF файлы, которые по каким-либо причинам не были сверстны в LaTeX.
+Reviewers don't edit `.tex`. They annotate PDFs in Acrobat, Preview, Zotero or on a
+tablet, or send an email of page numbers. Authors then hunt for every mark by hand,
+lose some, and write replies that drift from what actually changed. Existing tools
+either extract annotations without source locations (pdfannots), jump to one location
+at a time (SyncTeX in editors), regenerate your source from Word (pandoc), or require
+the reviewer to join a platform (Overleaf, Prism).
 
-В каталоге `extra/drafts/` находятся чертежи в формате А1.
+## What it will look like
 
-В каталоге `extra/posters/` находятся плакаты в формате А1.
-
-В каталоге `images/` находятся рисунки, схемы.
-
-В каталоге `images/infrastructure/` находятся схемы раздела виртуальной инфраструктуры.
-
-В каталоге `images/testing/` находятся скриншоты систем мониторинга.
-
-В каталоге `images/userguide/` находятся скриншоты пользовательского интерфейса в приложении Б.
-
-В каталоге `inc/` находятся файлы, которые подключаются к `main.tex`:
-* файлы формата `0-*.tex` являются ненумерованными секциями (например введение, заключение, список использованной литературы)
-* файлы формата `[1-9]-*.tex` являются нумерованными секциями (например постановка задчи, обзор современных методов и технологий серверной виртуализации и т.д)
-* файлы формата `[a-z]-app.tex` являются файлами приложений
-* файлы формата `[a-z]*.tex` не являются секциями, они подключаются для полной работы документа (например преамбула)
-
-В каталоге `inc/ddos/` находятся файлы, взятые из репозитория: https://github.com/Amet13/ddos-deflate
-
-Работа с LaTeX
---------------
-Как установить LaTeX: http://blog.amet13.name/2014/06/latex.html
-
-Пример компиляции проекта с помощью Makefile:
 ```bash
-git clone https://github.com/Amet13/bachelor-diploma.git
-cd bachelor-diploma/
-make
+proofback import review-ch3.pdf --round supervisor-2026-11
+proofback list
+#  where                         kind     note
+#  chapters/method.tex:41:18-23  replace  use 'robust' not 'strong'   exact
+#  chapters/method.tex:44        question why this threshold?          exact
+#  chapters/method.tex:45-46     delete   —                            exact
+
+proofback patch pb_7k2m9q | git apply
+proofback resolve pb_3xq1fd --status discuss --reply "Chosen by 5-fold CV, see §3.4"
+proofback answer -o review-ch3-answered.pdf
 ```
 
-Пример очистки сборочных файлов после компиляции (кроме PDF):
-```bash
-make clean
+- **Precise.** SyncTeX narrows to lines; a TeX-aware aligner finds the characters,
+  through macros, `\ref`, ligatures and hyphenation. Every item carries an honest
+  confidence level.
+- **Git-native.** State lives in `.proofback/` in your repo. Anchors follow your
+  edits into the next draft.
+- **Agent-ready.** `--json` everywhere, a published schema, an MCP server, and an
+  agent kit for Claude Code, Codex and Cursor. AI is optional, never required.
+- **Local.** Rust core, native and WebAssembly. The browser app on the website runs
+  entirely on your machine — nothing is uploaded.
+- **Measured.** Accuracy on a CI-built corpus is published with every release.
+
+## Roadmap
+
+| Version | Scope |
+|---|---|
+| v0.1 | PDF import, anchoring, `list` / `show` |
+| v0.2 | `resolve`, `patch`, `apply`, `sync`, answered PDF, response letter |
+| v0.3 | MCP server, agent kit, GitHub Action (PR review comments) |
+| v0.4 | Browser app (WASM) on GitHub Pages, npm package |
+| v0.5 | Email / free-text notes, optional AI suggestions |
+| v0.6 | Word round trip (export with anchors, import tracked changes) |
+| v0.7+ | VS Code extension, Typst, schema v1.0 |
+
+## Related
+
+[overfull](https://github.com/Amet13/overfull) checks a paper **before** you submit
+it. proofback starts **after** someone has read it. Separate tools, shared conventions.
+
+## Repository layout (today)
+
+```
+docs/PLAN.md                 the project plan
+site/                        GitHub Pages website (static, no build step)
+.github/workflows/pages.yml  deploys site/ on push to the default branch
 ```
 
-Лицензия
---------
-[Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/deed.ru)
+## License
 
-![CC BY SA](https://licensebuttons.net/l/by-sa/4.0/88x31.png)
-
-Благодарности
--------------
-[Анатолию Смолянинову](https://github.com/zarkone/bachelor) за основу шаблона LaTeX
-
-[Руслану Вихрову](http://defuze.cc.ua), Даниилу Велешко, [Сергею Сивкову](https://github.com/SerjSivkov) за исправление ошибок
-
-Пользователям сайта [www.linux.org.ru](https://www.linux.org.ru/) в решении вопросов, связанных с LaTeX
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
