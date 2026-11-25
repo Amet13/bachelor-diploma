@@ -7,6 +7,17 @@
         "confidence": {
           "$ref": "#/$defs/Confidence"
         },
+        "pending": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Confidence the location would have once the author confirms it (used for\nnotes structured by an AI model)."
+        },
         "reason": {
           "description": "Human-readable explanation of the confidence level.",
           "type": "string"
