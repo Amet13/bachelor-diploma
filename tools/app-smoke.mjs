@@ -1,6 +1,8 @@
 // End-to-end test of the browser app: imports the sample review in headless
 // Chromium and requires the result to match the native import exactly.
 // Prerequisites: `cargo xtask wasm` and `cargo xtask sample`.
+// APP_BASE_URL=https://amet13.github.io/proofback/ runs it against the live site
+// instead (only `cargo xtask sample` is needed then).
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -11,7 +13,8 @@ import { chromium } from 'playwright';
 const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const root = join(repo, 'site');
 const sample = join(repo, 'target/sample');
-for (const p of [join(root, 'app/engine/proofback_wasm_bg.wasm'), join(sample, 'review.pdf')]) {
+const live = process.env.APP_BASE_URL;
+for (const p of [...(live ? [] : [join(root, 'app/engine/proofback_wasm_bg.wasm')]), join(sample, 'review.pdf')]) {
   if (!existsSync(p)) { console.error(`missing ${p}; run cargo xtask wasm and cargo xtask sample`); process.exit(2); }
 }
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.wasm': 'application/wasm', '.json': 'application/json' };
@@ -25,8 +28,8 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': types[extname(file)] || 'application/octet-stream' }).end(await readFile(file));
   } catch { res.writeHead(404).end('not found'); }
 });
-await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const base = `http://127.0.0.1:${server.address().port}/proofback/`;
+if (!live) await new Promise((r) => server.listen(0, '127.0.0.1', r));
+const base = live ? live.replace(/\/?$/, '/') : `http://127.0.0.1:${server.address().port}/proofback/`;
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const page = await browser.newPage({ acceptDownloads: true, viewport: { width: 1440, height: 900 } });
@@ -86,7 +89,7 @@ const [ans] = await Promise.all([page.waitForEvent('download'), page.click('[dat
 const answered = await readFile(await ans.path());
 
 await browser.close();
-server.close();
+if (!live) server.close();
 
 const failures = [];
 if (count !== expected.length) failures.push(`expected ${expected.length} items in the list, got ${count}`);

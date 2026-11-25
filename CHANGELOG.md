@@ -3,6 +3,8 @@
 All notable changes to proofback. Versions follow [Semantic Versioning](https://semver.org/);
 the JSON schema is versioned separately (`schema_version` in round files).
 
+## Unreleased
+
 ## 0.2.0 (2026-11-25)
 
 ### Fixes

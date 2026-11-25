@@ -540,7 +540,9 @@ fn bump(root: &Path, how: &str) -> Result<()> {
         bail!("cargo update --workspace failed");
     }
     release_check(root, new)?;
-    println!("{old} -> {new}: {touched} files updated. Merging this to master releases v{new}.");
+    println!(
+        "{old} -> {new}: {touched} files updated. Merging this to the default branch releases v{new}."
+    );
     Ok(())
 }
 
