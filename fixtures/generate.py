@@ -29,8 +29,15 @@ CONNECT = ["However,", "In addition,", "As a result,", "In contrast,", "Moreover
 NAMES = ["Hale", "Okafor", "Lindqvist", "Moreau", "Tanaka", "Silva", "Brennan", "Kowalczyk", "Haddad", "Novak"]
 
 
+UNIQUE = {"on": False, "n": 0}
+
+
 def sentence(rng, i):
     s = f"{rng.choice(SUBJECTS).capitalize()} {rng.choice(VERBS)} {rng.choice(OBJECTS)} {rng.choice(TAILS)}"
+    if UNIQUE["on"]:
+        # Performance fixture: make every sentence findable by a unique case number.
+        UNIQUE["n"] += 1
+        s += f" in case {UNIQUE['n']}"
     r = rng.random()
     if r < 0.12:
         s += f", as shown in Table~\\ref{{tab:t{rng.randint(1, 3)}}}"
@@ -126,7 +133,30 @@ def article_twocol():
                 + "\n".join(body) + "\n\\end{document}\n")
 
 
+def thesis_perf(out_dir, chapters=80):
+    """A ~300-page thesis for performance tests. Not committed; built on demand."""
+    rng = random.Random(300)
+    UNIQUE["on"] = True
+    d = out_dir
+    os.makedirs(os.path.join(d, "chapters"), exist_ok=True)
+    inputs = []
+    for n in range(1, chapters + 1):
+        name = f"ch{n:03d}"
+        secs = [f"Part {k}" for k in range(1, 4)]
+        with open(os.path.join(d, "chapters", name + ".tex"), "w") as f:
+            f.write(chapter(rng, n, f"Chapter {n}", secs))
+        inputs.append(f"\\input{{chapters/{name}}}")
+    with open(os.path.join(d, "main.tex"), "w") as f:
+        f.write("\\documentclass[11pt,a4paper]{report}\n\\usepackage{amsmath}\n\\usepackage[numbers]{natbib}\n"
+                "\\begin{document}\n" + "\n".join(inputs) + "\n\\end{document}\n")
+
+
 if __name__ == "__main__":
-    thesis_long()
-    article_twocol()
-    print("generated thesis-long and article-twocolumn")
+    import sys
+    if len(sys.argv) > 2 and sys.argv[1] == "--perf":
+        thesis_perf(sys.argv[2])
+        print("generated performance fixture in", sys.argv[2])
+    else:
+        thesis_long()
+        article_twocol()
+        print("generated thesis-long and article-twocolumn")

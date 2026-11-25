@@ -111,6 +111,32 @@ jobs:
           cargo xtask fixtures
           cargo test --workspace --locked
 
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install TeX Live
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-fonts-recommended
+      - name: Build the 300-page performance fixture
+        run: |
+          python3 fixtures/generate.py --perf target/perf-thesis
+          cd target/perf-thesis
+          pdflatex -synctex=1 -interaction=nonstopmode main.tex > /dev/null
+          pdflatex -synctex=1 -interaction=nonstopmode main.tex > /dev/null
+      - run: cargo xtask pdfium
+      - name: Performance budgets (release build)
+        env:
+          PROOFBACK_PERF_FIXTURE: ${{ github.workspace }}/target/perf-thesis
+          PROOFBACK_REQUIRE_PDFIUM: "1"
+        run: cargo test --release --locked -p proofback-corpus --test perf -- --nocapture
+
   fuzz:
     runs-on: ubuntu-latest
     timeout-minutes: 20
