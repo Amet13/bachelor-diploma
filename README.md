@@ -1,97 +1,125 @@
-bachelor-diploma
-================
-Дипломная работа бакалавра в LaTeX, оформленная в соответствии с нормоконтролем Севастопольского государственного университета в 2015 году
+# proofback
 
-Диплом магистра с некоторыми исправлениями и дополнениями тут: https://github.com/Amet13/master-thesis
+**Every margin note, back in your source.**
 
-Особенности
------------
-* использование XeLaTeX, основной шрифт Times New Roman, 14pt, полуторный межстрочный интервал
-* подрисуночные и подтабличные записи в формате `номерСекции.номерРисунка`
-* нумерация страниц справа сверху
-* возможность указания начала нумерации страниц
-* возможность настройки отступов страниц
-* маркировка списка символом `—`
-* нумерованные списки обозначаются строчными буквами кириллицы со скобкой
-* названия секций в верхнем регистре, включая содержание
-* отступ в одну строку после имени заголовка
-* отступы в одну строку до и после имени заголовков второго и третьего уровней
-* пользовательские функции добавления рисунков, приложений и библиографии
-* использование `listings` для оформления исходного кода в документе, шрифт FreeMono
-* возможность добавления своих PDF в документ
-* добавление библиографии в файл `0-bibliography.tex`
-* чертежи и плакаты в формате А1
-* бланки задания, пояснительной записки, акта внедрения
-* доклад, представляемый на защите диплома
-* `Makefile` для компиляции и сборки проекта
+Your supervisor sent the PDF back with forty-seven marks on chapter 3. proofback
+reads them and tells you, for each one, the file, line and characters in your LaTeX
+source it refers to. It keeps a record of what you changed and what you didn't (and
+why), and writes your replies back into the reviewer's own PDF or a response letter.
 
-Структура исходников
---------------------
-Структура каталогов:
-```
-.
-├── extra
-│   ├── drafts
-│   └── posters
-├── images
-│   ├── infrastructure
-│   ├── testing
-│   └── userguide
-└── inc
-    └── ddos-deflate
-```
+Version 0.1.0. Website and browser app: <https://amet13.github.io/proofback/>.
+Design notes and decision log: [`docs/PLAN.md`](docs/PLAN.md).
 
-В корневом каталоге `.` находится файл `main.tex`.
-В `main.tex` подключается все, включая преамбулу, титульный лист, приложения и т.д.
+## Why this exists
 
-В каталоге `extra/` находятся подключаемые PDF файлы, которые по каким-либо причинам не были сверстны в LaTeX.
+Reviewers don't edit `.tex` files. They mark up the PDF in Acrobat, Preview, Zotero
+or on a tablet, or they send an email full of page numbers. You then search for each
+sentence by hand across a tree of `\input` files, miss a few, and write replies that
+no longer match what you changed. The tools that exist pull annotations out without
+saying where they belong in the source, jump to one location at a time, rebuild your
+source from Word, or ask every reviewer to sign up for a platform.
 
-В каталоге `extra/drafts/` находятся чертежи в формате А1.
+## Install
 
-В каталоге `extra/posters/` находятся плакаты в формате А1.
+From a release (Linux and macOS; PowerShell installer for Windows in the release):
 
-В каталоге `images/` находятся рисунки, схемы.
-
-В каталоге `images/infrastructure/` находятся схемы раздела виртуальной инфраструктуры.
-
-В каталоге `images/testing/` находятся скриншоты систем мониторинга.
-
-В каталоге `images/userguide/` находятся скриншоты пользовательского интерфейса в приложении Б.
-
-В каталоге `inc/` находятся файлы, которые подключаются к `main.tex`:
-* файлы формата `0-*.tex` являются ненумерованными секциями (например введение, заключение, список использованной литературы)
-* файлы формата `[1-9]-*.tex` являются нумерованными секциями (например постановка задчи, обзор современных методов и технологий серверной виртуализации и т.д)
-* файлы формата `[a-z]-app.tex` являются файлами приложений
-* файлы формата `[a-z]*.tex` не являются секциями, они подключаются для полной работы документа (например преамбула)
-
-В каталоге `inc/ddos/` находятся файлы, взятые из репозитория: https://github.com/Amet13/ddos-deflate
-
-Работа с LaTeX
---------------
-Как установить LaTeX: http://blog.amet13.name/2014/06/latex.html
-
-Пример компиляции проекта с помощью Makefile:
 ```bash
-git clone https://github.com/Amet13/bachelor-diploma.git
-cd bachelor-diploma/
-make
+curl -fsSL https://github.com/Amet13/proofback/releases/latest/download/install.sh | sh
 ```
 
-Пример очистки сборочных файлов после компиляции (кроме PDF):
+From source (Rust 1.92 or later):
+
 ```bash
-make clean
+cargo install --git https://github.com/Amet13/proofback proofback-cli
 ```
 
-Лицензия
---------
-[Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/deed.ru)
+Positioned PDF text needs PDFium; the release bundles it. Without it, proofback falls
+back to the text stored in the annotations. No install at all: open the
+[browser app](https://amet13.github.io/proofback/app/), which runs on your machine.
+Node: `npm install proofback`.
 
-![CC BY SA](https://licensebuttons.net/l/by-sa/4.0/88x31.png)
+## Usage
 
-Благодарности
--------------
-[Анатолию Смолянинову](https://github.com/zarkone/bachelor) за основу шаблона LaTeX
+```bash
+proofback import review-ch3.pdf --round supervisor-2026-11
+proofback list
+# id          where                          kind      note                       anchor
+# pb_7k2m9q   chapters/method.tex:41:18-23   replace   Replace with "robust"      exact
+# pb_3xq1fd   chapters/method.tex:44:1-13    question  Why this threshold?        exact
+# pb_d0r4kl   chapters/method.tex:45:1-46:34 delete    (strike-out, no note)      exact
 
-[Руслану Вихрову](http://defuze.cc.ua), Даниилу Велешко, [Сергею Сивкову](https://github.com/SerjSivkov) за исправление ошибок
+proofback patch pb_7k2m9q pb_d0r4kl | git apply
+proofback resolve pb_3xq1fd --status discuss --reply "Chosen by 5-fold CV, see 3.4"
+proofback answer -o review-ch3-answered.pdf
+```
 
-Пользователям сайта [www.linux.org.ru](https://www.linux.org.ru/) в решении вопросов, связанных с LaTeX
+SyncTeX narrows each mark to a few lines and a TeX-aware aligner finds the
+characters. When proofback isn't sure, it says "line" or "page only" instead of
+guessing; a confident wrong answer is the one thing it is built to avoid.
+
+The record lives in `.proofback/` next to your sources, so it is versioned with them,
+and `sync` carries every item into the next draft. Each command takes `--json`; the
+schema is published, and an MCP server lets a coding agent work through the list with
+you. Reviewer text reaches the agent marked as untrusted. The core makes no network
+calls, and the browser app reads your files without uploading them.
+
+## More inputs
+
+```bash
+proofback import notes-from-email.txt          # "p. 12, para 2: unclear"
+proofback docx export -o thesis.docx           # send to a Word reviewer
+proofback import thesis-reviewed.docx          # tracked changes and comments come back
+proofback import paper.pdf                     # Typst projects work the same way
+```
+
+Agents: `proofback mcp` runs an MCP server on stdio; see [`docs/agents.md`](docs/agents.md)
+and the agent kit in [`integrations/`](integrations/). Pull requests: see
+[`docs/github-action.md`](docs/github-action.md). VS Code: [`integrations/vscode`](integrations/vscode).
+
+## Accuracy
+
+Measured in CI on every pull request (details in [`docs/PLAN.md`](docs/PLAN.md#21-implementation-notes)):
+
+| Input | Exact range | Wrong anchor |
+|---|---|---|
+| Annotated PDF with SyncTeX | 97.8% | 0.4% |
+| Annotated PDF, text only | 43.3% (95.3% correct line) | 0% |
+| Word round trip | 100% | 0% |
+| Typst | 100% | 0% |
+
+A 322-page thesis with 500 notes imports in about 0.3 s.
+
+## Repository layout
+
+```
+crates/                 Rust workspace: core, CLI, MCP server, WebAssembly bindings
+fixtures/               LaTeX and Typst projects with built PDFs and SyncTeX files
+site/                   website and browser app, static
+npm/                    npm package
+integrations/           agent kit, VS Code extension
+packaging/              installers, Homebrew formula, GitHub Action helper
+docs/                   plan, agent guide, GitHub Action guide
+```
+
+Develop:
+
+```bash
+cargo xtask pdfium
+PROOFBACK_REQUIRE_PDFIUM=1 cargo test --workspace
+```
+
+Check the website locally:
+
+```bash
+cd tools && npm ci && npx playwright install chromium && npm run check
+```
+
+## Related
+
+[overfull](https://github.com/Amet13/overfull) checks a paper **before** you submit
+it. proofback starts **after** someone has read it.
+
+## License
+
+Code: [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Bundled website fonts: SIL Open Font License 1.1 (see `site/fonts/`).

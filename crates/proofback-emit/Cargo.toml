@@ -1,0 +1,17 @@
+[package]
+name = "proofback-emit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+proofback-model = { version = "0.1.0", path = "../proofback-model" }
+proofback-pdf = { version = "0.1.0", path = "../proofback-pdf" }
+serde_json = "1.0.154"
+
+[lints]
+workspace = true

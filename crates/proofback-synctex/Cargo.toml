@@ -1,0 +1,16 @@
+[package]
+name = "proofback-synctex"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+flate2 = "1.1.11"
+thiserror = "2.0.21"
+
+[lints]
+workspace = true

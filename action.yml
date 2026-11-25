@@ -1,0 +1,120 @@
+name: proofback
+description: Import reviewer feedback from an annotated PDF and show it on the right lines of your LaTeX sources.
+author: proofback contributors
+branding:
+  icon: edit-3
+  color: yellow
+
+inputs:
+  mode:
+    description: "`import` (read a review PDF; read-only token is enough) or `comment` (post review comments from a previous import; needs pull-requests: write)."
+    default: import
+  pdf:
+    description: Annotated PDF to import (mode import).
+    required: false
+  synctex:
+    description: SyncTeX file of the build the reviewer read. Found automatically when omitted.
+    required: false
+  round:
+    description: Round name. Defaults to the date plus the PDF name.
+    required: false
+  working-directory:
+    description: Directory of the LaTeX project.
+    default: "."
+  version:
+    description: proofback release to install, e.g. v0.1.0, or `latest`.
+    default: latest
+  fail-on-open:
+    description: Fail the step when open items remain.
+    default: "false"
+  upload-sarif:
+    description: Upload results to GitHub code scanning (needs security-events write permission).
+    default: "false"
+  review-file:
+    description: JSON file that carries items from `import` to `comment` (upload it as an artifact between the two jobs).
+    default: proofback-review.json
+  github-token:
+    description: Token for `comment` mode.
+    default: ${{ github.token }}
+
+outputs:
+  items:
+    description: Number of imported items.
+    value: ${{ steps.import.outputs.items }}
+  open:
+    description: Number of open items.
+    value: ${{ steps.import.outputs.open }}
+  sarif:
+    description: Path of the SARIF file.
+    value: ${{ steps.import.outputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install proofback
+      shell: bash
+      env:
+        PROOFBACK_VERSION: ${{ inputs.version }}
+        PROOFBACK_PREFIX: ${{ runner.temp }}/proofback
+      run: |
+        sh "$GITHUB_ACTION_PATH/packaging/install.sh"
+        echo "$PROOFBACK_PREFIX/bin" >> "$GITHUB_PATH"
+
+    - name: Import review
+      id: import
+      if: inputs.mode == 'import'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PDF: ${{ inputs.pdf }}
+        SYNCTEX: ${{ inputs.synctex }}
+        ROUND: ${{ inputs.round }}
+        FAIL_ON_OPEN: ${{ inputs.fail-on-open }}
+        REVIEW_FILE: ${{ inputs.review-file }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: |
+        set -euo pipefail
+        if [ -z "$PDF" ]; then echo "::error::input pdf is required in import mode"; exit 2; fi
+        [ -d .proofback ] || proofback init --quiet
+        args=(import "$PDF" --json)
+        [ -n "$SYNCTEX" ] && args+=(--synctex "$SYNCTEX")
+        [ -n "$ROUND" ] && args+=(--round "$ROUND")
+        proofback "${args[@]}" > proofback-import.json
+        proofback list --json > proofback-items.json
+        items=$(jq '.items | length' proofback-import.json)
+        open=$(jq '[.items[] | select(.status == "open" or .status == "discuss")] | length' proofback-items.json)
+        proofback sarif -o proofback.sarif
+        jq -n --arg pr "$PR_NUMBER" --arg sha "$HEAD_SHA" --slurpfile items proofback-items.json \
+          '{pr: $pr, head_sha: $sha, items: $items[0].items}' > "$REVIEW_FILE"
+        {
+          echo "### proofback: $items item(s) imported, $open open"
+          echo
+          proofback list --md
+        } >> "$GITHUB_STEP_SUMMARY"
+        {
+          echo "items=$items"
+          echo "open=$open"
+          echo "sarif=$(pwd)/proofback.sarif"
+        } >> "$GITHUB_OUTPUT"
+        if [ "$FAIL_ON_OPEN" = "true" ] && [ "$open" -gt 0 ]; then
+          echo "::error::$open open review item(s)"
+          exit 1
+        fi
+
+    - name: Upload SARIF
+      if: inputs.mode == 'import' && inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+      with:
+        sarif_file: ${{ steps.import.outputs.sarif }}
+        category: proofback
+
+    - name: Post review comments
+      if: inputs.mode == 'comment'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REVIEW_FILE: ${{ inputs.review-file }}
+        REPO: ${{ github.repository }}
+      run: python3 "$GITHUB_ACTION_PATH/packaging/action/post_review.py"

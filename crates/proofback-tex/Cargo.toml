@@ -1,0 +1,18 @@
+[package]
+name = "proofback-tex"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+unicode-normalization = "0.1.26"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+proptest = "1.11.0"

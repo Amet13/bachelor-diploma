@@ -1,0 +1,55 @@
+{
+  "name": "proofback",
+  "displayName": "proofback",
+  "description": "Reviewer feedback from annotated PDFs and Word documents, on the exact lines of your LaTeX source.",
+  "version": "0.1.0",
+  "publisher": "proofback",
+  "license": "MIT OR Apache-2.0",
+  "repository": { "type": "git", "url": "https://github.com/Amet13/proofback.git", "directory": "integrations/vscode" },
+  "engines": { "vscode": "^1.95.0" },
+  "categories": ["Other"],
+  "keywords": ["latex", "review", "pdf", "thesis", "feedback"],
+  "activationEvents": ["workspaceContains:.proofback/config.toml"],
+  "main": "./out/src/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [{ "id": "proofback.items", "name": "Review feedback" }]
+    },
+    "commands": [
+      { "command": "proofback.refresh", "title": "proofback: Refresh", "icon": "$(refresh)" },
+      { "command": "proofback.done", "title": "proofback: Mark done" },
+      { "command": "proofback.wontfix", "title": "proofback: Won't fix" },
+      { "command": "proofback.discuss", "title": "proofback: Discuss" },
+      { "command": "proofback.reply", "title": "proofback: Reply…" },
+      { "command": "proofback.apply", "title": "proofback: Apply suggested edit" },
+      { "command": "proofback.sync", "title": "proofback: Sync anchors" }
+    ],
+    "menus": {
+      "view/title": [{ "command": "proofback.refresh", "when": "view == proofback.items", "group": "navigation" }],
+      "view/item/context": [
+        { "command": "proofback.done", "when": "view == proofback.items && viewItem =~ /item/", "group": "1_status@1" },
+        { "command": "proofback.wontfix", "when": "view == proofback.items && viewItem =~ /item/", "group": "1_status@2" },
+        { "command": "proofback.discuss", "when": "view == proofback.items && viewItem =~ /item/", "group": "1_status@3" },
+        { "command": "proofback.reply", "when": "view == proofback.items && viewItem =~ /item/", "group": "2_reply" },
+        { "command": "proofback.apply", "when": "view == proofback.items && viewItem == item-edit", "group": "3_edit" }
+      ]
+    },
+    "configuration": {
+      "title": "proofback",
+      "properties": {
+        "proofback.path": { "type": "string", "default": "proofback", "description": "Path to the proofback executable." },
+        "proofback.showResolved": { "type": "boolean", "default": false, "description": "Also show items that are done, won't fix or duplicates." }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "tsc -p . && node --test out/test/*.test.js",
+    "package": "npx --yes @vscode/vsce@3 package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.95.0",
+    "typescript": "5.9.3"
+  }
+}

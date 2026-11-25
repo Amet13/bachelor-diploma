@@ -1,0 +1,1 @@
+doc-valid-idents = ["PDFium", "SyncTeX", "LaTeX", "XeLaTeX", "LuaLaTeX", "pdfLaTeX", "WebAssembly", "PDFDocEncoding", "TeX", "UTF-16BE", "GitHub", "OpenAI", "JavaScript", "TypeScript", ".."]

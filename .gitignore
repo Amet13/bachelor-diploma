@@ -1,0 +1,15 @@
+/target
+node_modules/
+.DS_Store
+*.aux
+*.log
+*.synctex.gz
+!fixtures/**/*.synctex.gz
+tools/node_modules/
+site/app/engine/
+npm/engine/
+npm/node_modules/
+integrations/vscode/out/
+integrations/vscode/node_modules/
+integrations/vscode/*.vsix
+__pycache__/

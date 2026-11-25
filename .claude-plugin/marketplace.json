@@ -1,0 +1,11 @@
+{
+  "name": "proofback",
+  "owner": { "name": "proofback contributors" },
+  "plugins": [
+    {
+      "name": "proofback",
+      "source": "./integrations/claude-code",
+      "description": "Work through reviewer feedback on LaTeX documents with proofback."
+    }
+  ]
+}
