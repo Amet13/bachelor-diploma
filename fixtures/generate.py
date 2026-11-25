@@ -133,6 +133,48 @@ def article_twocol():
                 + "\n".join(body) + "\n\\end{document}\n")
 
 
+def typst_sentence(rng, i):
+    s = f"{rng.choice(SUBJECTS).capitalize()} {rng.choice(VERBS)} {rng.choice(OBJECTS)} {rng.choice(TAILS)}"
+    r = rng.random()
+    if r < 0.12:
+        s += f", as shown in @tab-{rng.randint(1, 3)}"
+    elif r < 0.22:
+        s += f" with $alpha_{rng.randint(1, 9)} = {rng.randint(1, 99) / 100}$"
+    elif r < 0.30:
+        s += f", following _{rng.choice(NAMES)}_"
+    elif r < 0.36:
+        s += f"#footnote[See run {i} for details.]"
+    s += "."
+    if rng.random() < 0.3:
+        s = f"*{rng.choice(CONNECT)}* {s[0].lower()}{s[1:]}"
+    return s
+
+
+def typst_paper():
+    rng = random.Random(4242)
+    d = os.path.join(ROOT, "typst-paper")
+    os.makedirs(os.path.join(d, "sections"), exist_ok=True)
+    includes = []
+    for n, title in enumerate(["Introduction", "Method", "Results", "Discussion"], start=1):
+        body = [f"= {title}", ""]
+        for k in range(3):
+            body += [f"== Part {n}.{k + 1}", ""]
+            for p in range(rng.randint(2, 4)):
+                lines = []
+                for q in range(rng.randint(3, 6)):
+                    lines.append(typst_sentence(rng, n * 100 + k * 10 + q))
+                body += ["\n".join(lines), ""]
+        if n == 3:
+            body += ["#figure(table(columns: 2, [Setting], [Error], [Baseline], [0.31], [Proposed], [0.12]), caption: [Results.]) <tab-1>", ""]
+        name = f"sections/s{n}.typ"
+        with open(os.path.join(d, name), "w") as f:
+            f.write("\n".join(body) + "\n")
+        includes.append(f'#include "{name}"')
+    with open(os.path.join(d, "main.typ"), "w") as f:
+        f.write('#set page(paper: "a4", numbering: "1")\n#set text(font: "Libertinus Serif", size: 11pt)\n#set par(justify: true)\n#set heading(numbering: "1.1")\n\n#align(center, text(16pt)[*Robust Thresholds in Typst*])\n\n'
+                + "\n".join(includes) + "\n\n#figure(table(columns: 2, [A], [1], [B], [2]), caption: [Second table.]) <tab-2>\n#figure(table(columns: 2, [C], [3]), caption: [Third table.]) <tab-3>\n")
+
+
 def thesis_perf(out_dir, chapters=80):
     """A ~300-page thesis for performance tests. Not committed; built on demand."""
     rng = random.Random(300)
@@ -159,4 +201,5 @@ if __name__ == "__main__":
     else:
         thesis_long()
         article_twocol()
-        print("generated thesis-long and article-twocolumn")
+        typst_paper()
+        print("generated thesis-long, article-twocolumn and typst-paper")

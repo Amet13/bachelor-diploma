@@ -65,7 +65,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
-          toolchain: "1.88"
+          toolchain: "1.92"
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo check --workspace --locked
 
@@ -105,7 +105,7 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - name: Install TeX Live
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-fonts-recommended
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-fonts-recommended pandoc
       - name: Rebuild fixtures with this runner's TeX Live and rerun tests
         env:
           PROOFBACK_REQUIRE_PDFIUM: "1"
@@ -139,6 +139,25 @@ jobs:
           PROOFBACK_PERF_FIXTURE: ${{ github.workspace }}/target/perf-thesis
           PROOFBACK_REQUIRE_PDFIUM: "1"
         run: cargo test --release --locked -p proofback-corpus --test perf -- --nocapture
+
+  vscode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: integrations/vscode
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: integrations/vscode/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run package
 
   fuzz:
     runs-on: ubuntu-latest

@@ -8,6 +8,7 @@ mod git;
 mod notes_cmd;
 mod output;
 mod triage;
+mod typst_cmd;
 
 use std::path::PathBuf;
 use std::process::ExitCode;

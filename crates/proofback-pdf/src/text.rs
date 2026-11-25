@@ -81,12 +81,17 @@ pub fn load_pdfium(hint: Option<&Path>) -> Result<Pdfium, Error> {
         if path.is_file() {
             match Pdfium::bind_to_library(&path) {
                 Ok(b) => return Ok(Pdfium::new(b)),
+                // PDFium can be bound once per process; later callers share it.
+                Err(PdfiumError::PdfiumLibraryBindingsAlreadyInitialized) => {
+                    return Ok(Pdfium::default());
+                }
                 Err(e) => tried.push(format!("{}: {e}", path.display())),
             }
         }
     }
     match Pdfium::bind_to_system_library() {
         Ok(b) => Ok(Pdfium::new(b)),
+        Err(PdfiumError::PdfiumLibraryBindingsAlreadyInitialized) => Ok(Pdfium::default()),
         Err(e) => {
             tried.push(format!("system library: {e}"));
             Err(Error::PdfiumMissing(tried.join("; ")))
