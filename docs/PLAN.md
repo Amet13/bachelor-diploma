@@ -728,4 +728,5 @@ fetched when the first import starts and then cached: the core is 670 KB and pdf
 | 35 | Correctness | TeX normaliser span bugs found by property tests | Fixed; regressions kept in `proptest-regressions` |
 | 36 | Portability | Windows checkouts converted fixture line endings | `.gitattributes` keeps fixtures byte-exact; paragraph splitting accepts CRLF |
 | 37 | Supply chain | `zip` advisories in an older version | Upgraded to `zip` 9.7.3; two Typst-only `quick-xml` advisories ignored with reasons |
+| 38 | Release | The Pages deploy shipped `/app` without its engine, and the browser and npm parity tests did not run on pull requests | The Website workflow builds the engine, runs both parity tests on every pull request and deploys the built engine |
 
