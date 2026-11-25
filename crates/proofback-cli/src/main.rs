@@ -5,6 +5,7 @@ mod commands;
 mod extract;
 mod git;
 mod output;
+mod triage;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -55,6 +56,12 @@ pub enum Command {
         /// Lines of source context around the target.
         #[arg(long, default_value_t = 3)]
         context: u32,
+    },
+    /// Work through items in a keyboard UI.
+    Triage {
+        /// Include items that are already resolved.
+        #[arg(long)]
+        all: bool,
     },
     /// Set an item's status and add a reply.
     Resolve {

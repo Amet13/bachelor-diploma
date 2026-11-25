@@ -61,7 +61,9 @@ pub fn tex_files_at(root: &Path, rev: &str) -> Result<Vec<(String, String)>> {
     let mut out = Vec::new();
     for name in list.split(|b| *b == 0).filter(|n| !n.is_empty()) {
         let name = String::from_utf8_lossy(name).into_owned();
-        let ext = Path::new(&name).extension().map(std::ffi::OsStr::to_ascii_lowercase);
+        let ext = Path::new(&name)
+            .extension()
+            .map(std::ffi::OsStr::to_ascii_lowercase);
         if !ext.is_some_and(|e| e == "tex" || e == "ltx") {
             continue;
         }

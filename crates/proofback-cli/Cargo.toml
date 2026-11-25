@@ -21,6 +21,7 @@ proofback-model = { version = "0.0.0", path = "../proofback-model" }
 proofback-pdf = { version = "0.0.0", path = "../proofback-pdf" }
 proofback-store = { version = "0.0.0", path = "../proofback-store" }
 proofback-synctex = { version = "0.0.0", path = "../proofback-synctex" }
+ratatui = "0.29.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 
