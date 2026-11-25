@@ -147,6 +147,8 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Run the MCP server on stdio (for Claude Code, Codex, Cursor and other agents).
+    Mcp,
     /// Print the JSON Schema of round files.
     Schema,
     /// Internal: parse a PDF in an isolated process.

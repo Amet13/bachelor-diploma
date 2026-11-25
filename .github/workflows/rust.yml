@@ -33,6 +33,8 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked
       - run: cargo xtask schema --check
+      - name: Action script tests
+        run: python3 -m unittest discover -s packaging/action -v
 
   test:
     strategy:

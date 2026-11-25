@@ -1,0 +1,22 @@
+[package]
+name = "proofback-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+proofback-anchor = { version = "0.0.0", path = "../proofback-anchor" }
+proofback-emit = { version = "0.0.0", path = "../proofback-emit" }
+proofback-model = { version = "0.0.0", path = "../proofback-model" }
+proofback-store = { version = "0.0.0", path = "../proofback-store" }
+serde_json = "1.0.154"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile = "3.27.0"
