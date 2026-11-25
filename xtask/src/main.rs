@@ -39,7 +39,7 @@ fn main() -> Result<()> {
         ),
         _ => {
             eprintln!(
-                "usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...] | wasm | npm | sample | bump <X.Y.Z> | release-check <X.Y.Z>>"
+                "usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...] | wasm | npm | sample | bump <patch|minor|major|X.Y.Z> | release-check <X.Y.Z>>"
             );
             std::process::exit(2);
         }
@@ -446,12 +446,33 @@ fn today() -> String {
 }
 
 /// Set the version everywhere, refresh Cargo.lock and date the changelog section.
-fn bump(root: &Path, new: &str) -> Result<()> {
-    let new = new.trim_start_matches('v');
-    if !is_semver(new) {
-        bail!("{new} is not a version like 1.2.3");
-    }
+/// The version after `old` for `patch`, `minor` or `major`; any other input is
+/// taken as an exact version.
+fn next_version(old: &str, how: &str) -> Result<String> {
+    let core = old.split(['-', '+']).next().unwrap_or(old);
+    let n: Vec<u64> = core
+        .split('.')
+        .map(str::parse)
+        .collect::<Result<_, _>>()
+        .with_context(|| format!("current version {old} is not numeric"))?;
+    let [major, minor, patch] = n[..] else {
+        bail!("current version {old} is not like 1.2.3");
+    };
+    Ok(match how {
+        "patch" => format!("{major}.{minor}.{}", patch + 1),
+        "minor" => format!("{major}.{}.0", minor + 1),
+        "major" => format!("{}.0.0", major + 1),
+        exact => exact.trim_start_matches('v').to_owned(),
+    })
+}
+
+fn bump(root: &Path, how: &str) -> Result<()> {
     let old = workspace_version(root)?;
+    let new = next_version(&old, how)?;
+    let new = new.as_str();
+    if !is_semver(new) {
+        bail!("{new} is not a version like 1.2.3 (or use patch, minor, major)");
+    }
     let mut touched = 0;
     for (file, _) in versions(root)?.iter().filter(|(_, v)| *v == old) {
         let path = root.join(file);
@@ -501,7 +522,12 @@ fn bump(root: &Path, new: &str) -> Result<()> {
     } else if text.contains("## Unreleased") {
         std::fs::write(
             &changelog,
-            text.replacen("## Unreleased", &format!("## {new} ({})", today()), 1),
+            // Keep an empty Unreleased section on top for the next changes.
+            text.replacen(
+                "## Unreleased",
+                &format!("## Unreleased\n\n## {new} ({})", today()),
+                1,
+            ),
         )?;
     } else {
         bail!("CHANGELOG.md has no \"## Unreleased\" section to turn into {new}");
@@ -514,7 +540,7 @@ fn bump(root: &Path, new: &str) -> Result<()> {
         bail!("cargo update --workspace failed");
     }
     release_check(root, new)?;
-    println!("{old} -> {new}: {touched} files updated. Review, commit, then tag v{new}.");
+    println!("{old} -> {new}: {touched} files updated. Merging this to master releases v{new}.");
     Ok(())
 }
 
@@ -557,4 +583,18 @@ fn release_check(root: &Path, version: &str) -> Result<()> {
     std::fs::write(root.join("target/release-notes.md"), format!("{notes}\n"))?;
     println!("release {version}: versions and changelog agree");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::next_version;
+
+    #[test]
+    fn next_versions() {
+        assert_eq!(next_version("0.2.0", "patch").unwrap(), "0.2.1");
+        assert_eq!(next_version("0.2.3", "minor").unwrap(), "0.3.0");
+        assert_eq!(next_version("0.2.3", "major").unwrap(), "1.0.0");
+        assert_eq!(next_version("1.0.0-rc.1", "patch").unwrap(), "1.0.1");
+        assert_eq!(next_version("0.2.0", "v1.2.3").unwrap(), "1.2.3");
+    }
 }

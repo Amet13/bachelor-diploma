@@ -584,9 +584,9 @@ Mapping Word edits back is solved at export time:
 - Semantic versioning for the tool; the JSON schema is versioned separately.
 - CI: lint, test, golden accuracy, benchmarks, fuzz smoke run, WebAssembly build,
   site checks, Pages deploy. Every third-party action pinned by commit SHA.
-- Releases from a tag through `.github/workflows/release.yml` (see
-  [`docs/releasing.md`](releasing.md)): the tag must match every version field and a
-  dated `CHANGELOG.md` section; GitHub Release with checksums and provenance, shell and
+- Releases are automatic through `.github/workflows/release.yml` (see
+  [`docs/releasing.md`](releasing.md)): started from the GitHub website or by merging a
+  version bump; every version field must match a dated `CHANGELOG.md` section; GitHub Release with checksums and provenance, shell and
   PowerShell installers, the Node package and the VS Code extension as release files,
   and an optional Homebrew tap. No package registry accounts (npm, Marketplace,
   crates.io) are used: everything installs from GitHub.
