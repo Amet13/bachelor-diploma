@@ -32,6 +32,9 @@ similar_names = "allow"
 many_single_char_names = "allow"
 match_same_arms = "allow"
 missing_panics_doc = "allow"
+format_push_string = "allow"
+format_collect = "allow"
+type_complexity = "allow"
 
 [profile.release]
 lto = "thin"

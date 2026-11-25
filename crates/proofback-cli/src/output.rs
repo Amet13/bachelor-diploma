@@ -108,6 +108,9 @@ pub fn note(it: &Item, width: usize) -> String {
 
 /// Render items as an aligned table.
 pub fn table(items: &[&Item], style: &Style) -> String {
+    if items.is_empty() {
+        return String::new();
+    }
     let rows: Vec<[String; 6]> = items
         .iter()
         .map(|it| {

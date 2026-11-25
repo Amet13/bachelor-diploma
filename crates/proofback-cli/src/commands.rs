@@ -47,6 +47,7 @@ pub fn run(cli: &Cli) -> Result<u8> {
         Command::Import(a) => cmd_import(&project()?, a, cli.quiet, &style),
         Command::List(a) => cmd_list(&project()?, a, &style),
         Command::Show { id, json, context } => cmd_show(&project()?, id, *json, *context, &style),
+        Command::Docx { cmd } => crate::docx_cmd::run(&project()?, cmd, cli.quiet),
         Command::Confirm { id } => crate::notes_cmd::confirm(&project()?, id, cli.quiet),
         Command::Suggest { id, consent } => crate::notes_cmd::suggest(&project()?, id, *consent),
         Command::Triage { all } => {

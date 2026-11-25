@@ -143,6 +143,11 @@ pub enum Command {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Word round trip: export a DOCX with hidden source anchors for reviewers who use Word.
+    Docx {
+        #[command(subcommand)]
+        cmd: DocxCmd,
+    },
     /// Write SARIF 2.1.0 for GitHub code scanning.
     Sarif {
         #[arg(short, long)]
@@ -165,6 +170,27 @@ pub enum Command {
     /// Internal: parse a PDF in an isolated process.
     #[command(name = "__extract", hide = true)]
     Extract { args: Vec<String> },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum DocxCmd {
+    /// Write the document as DOCX; every paragraph carries its source location.
+    Export {
+        #[arg(short, long)]
+        output: PathBuf,
+        /// `builtin` (no dependencies) or `pandoc` (higher fidelity; needs pandoc).
+        #[arg(long, value_enum, default_value_t = DocxEngine::Builtin)]
+        engine: DocxEngine,
+        /// Title shown at the top (builtin engine).
+        #[arg(long, default_value = "")]
+        title: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum DocxEngine {
+    Builtin,
+    Pandoc,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
