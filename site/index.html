@@ -1,8 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9WgQksU5DcRXJDse1/0sfOL+8zejqK6PQ36P6O8t6g8='; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
   <title>proofback</title>
   <meta name="description" content="proofback maps every highlight, strike-out and note on a reviewed PDF to the exact line of your LaTeX source, tracks what you did about it, and sends the answers back.">
   <meta name="theme-color" content="#dfe2e6" media="(prefers-color-scheme: light)">
@@ -10,15 +13,16 @@
   <meta property="og:title" content="proofback">
   <meta property="og:description" content="Reviewer marks on a PDF, mapped to the exact line of your LaTeX source.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://amet13.github.io/proofback/">
+  <meta property="og:image" content="https://amet13.github.io/proofback/og.png">
+  <meta property="og:image:alt" content="A PDF page with reviewer marks next to the LaTeX source they map to">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://amet13.github.io/proofback/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
-  <script>
-    try { const t = localStorage.getItem('pb-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-  </script>
+  <script>try{var t=localStorage.getItem("pb-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -31,7 +35,7 @@
       <a href="#accuracy">Accuracy</a>
       <a href="#roadmap">Roadmap</a>
       <a href="https://github.com/Amet13/proofback">GitHub</a>
-      <button class="theme" type="button" aria-label="Toggle dark mode">
+      <button class="theme" type="button" aria-label="Dark theme" aria-pressed="false" title="Toggle dark theme">
         <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3a7 7 0 0 1 0 14Z" fill="currentColor"/></svg>
       </button>
     </nav>
@@ -50,8 +54,9 @@
       </div>
     </section>
 
+    <p class="viewer-hint" id="demo-hint">Demo: select any marked text on the PDF page to see where it maps in the source.</p>
     <!-- Demo: a PDF viewer and an editor, side by side -->
-    <section class="viewer" id="desk" aria-label="Interactive demo: click a mark on the PDF page">
+    <section class="viewer" id="desk" aria-label="Interactive demo" aria-describedby="demo-hint">
       <div class="pane pane-pdf">
         <div class="bar"><span>review-ch3.pdf</span><span class="bar-dim">page 14 of 212</span></div>
         <div class="canvas">
@@ -59,22 +64,22 @@
             <h2 class="page-h"><span>3.2</span> Estimating the threshold</h2>
             <p>
               The estimator is
-              <button class="mk mk-strike" data-id="1" aria-label="Mark 1, replace">strong</button><sup>1</sup>
+              <button type="button" class="mk mk-strike" data-id="1" aria-pressed="false">strong</button><sup>1</sup>
               under heavy-tailed noise, which makes it
-              <button class="mk mk-hl" data-id="2" aria-label="Mark 2, highlight">suitable for sensor data</button><sup>2</sup>
+              <button type="button" class="mk mk-hl" data-id="2" aria-pressed="false">suitable for sensor data</button><sup>2</sup>
               collected in the field. We therefore fix the threshold at
-              <button class="mk mk-note" data-id="3" aria-label="Mark 3, note"><i>τ</i> = 0.35</button><sup>3</sup>.
-              <button class="mk mk-strike" data-id="4" aria-label="Mark 4, delete">Earlier experiments with a fixed window were inconclusive and are omitted here.</button><sup>4</sup>
-              Results for the full dataset are given in <span class="nw">Table 3.1<button class="mk mk-caret" data-id="5" aria-label="Mark 5, insert"></button><sup>5</sup>.</span>
+              <button type="button" class="mk mk-note" data-id="3" aria-pressed="false"><i>τ</i> = 0.35</button><sup>3</sup>.
+              <button type="button" class="mk mk-strike" data-id="4" aria-pressed="false">Earlier experiments with a fixed window were inconclusive and are omitted here.</button><sup>4</sup>
+              Results for the full dataset are given in <span class="nw">Table 3.1<button type="button" class="mk mk-caret" data-id="5" aria-pressed="false"><span class="sr">insert here</span></button><sup>5</sup>.</span>
             </p>
             <p class="page-dim">The sensitivity of the procedure to the choice of window length is examined in Section 3.4, where we compare three alternatives against the baseline described above.</p>
             <div class="pageno">14</div>
           </article>
           <div class="popups" aria-hidden="true">
-            <div class="pop" data-for="1"><b>M. Ivanova</b><span>Replace with “robust”</span></div>
-            <div class="pop" data-for="2"><b>M. Ivanova</b><span>Cite the field study here</span></div>
-            <div class="pop" data-for="3"><b>M. Ivanova</b><span>Why this threshold?</span></div>
-            <div class="pop" data-for="5"><b>M. Ivanova</b><span>Insert “and Fig. 3.2”</span></div>
+            <div class="pop" data-for="1"><b>Prof. Hale</b><span>Replace with “robust”</span></div>
+            <div class="pop" data-for="2"><b>Prof. Hale</b><span>Cite the field study here</span></div>
+            <div class="pop" data-for="3"><b>Prof. Hale</b><span>Why this threshold?</span></div>
+            <div class="pop" data-for="5"><b>Prof. Hale</b><span>Insert “and Fig. 3.2”</span></div>
           </div>
         </div>
       </div>
@@ -86,7 +91,6 @@
         <ol class="code" id="code"></ol>
         <div class="item" id="item" aria-live="polite"></div>
       </div>
-      <p class="viewer-hint">Click any marked text on the page.</p>
     </section>
 
     <section class="how" id="how" aria-labelledby="how-title">

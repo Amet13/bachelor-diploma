@@ -1,122 +1,135 @@
-# proofback — project plan
+# proofback: project plan
 
-> **Every margin note, back in your source.**
-> proofback takes the feedback a reviewer leaves on a compiled PDF — highlights,
-> strike-outs, sticky notes, inserted text, an email full of "p. 12, ¶2: unclear" —
-> and lands each one on the exact file, line and character range of your LaTeX
-> source. Then it helps you (or your coding agent) work through them, and sends the
-> answers back.
+**Every margin note, back in your source.**
 
-Status: **planning** (M0). This document is the single source of truth for scope,
-design and roadmap. Decisions are recorded inline as `D-xx` so later changes can
-reference them.
+proofback takes the feedback a reviewer leaves on a compiled PDF (highlights,
+strike-outs, carets, sticky notes, and later email notes and Word tracked changes),
+finds the exact file, line and character range of the LaTeX source each item refers
+to, tracks what the author did about it across drafts, and sends the answers back.
+
+| | |
+|---|---|
+| Status | Plan final (v1.0 of this document). Implementation starts at M1. |
+| Website | <https://amet13.github.io/proofback/> |
+| Licence | MIT OR Apache-2.0 |
+| Decisions | Numbered `D-xx`, collected in [§20](#20-decision-log) |
+| Audit | Findings from the plan review and how each was resolved: [§19](#19-audit-and-grill-log) |
 
 ---
 
-## 1. The problem
+## 1. Problem
 
-Supervisors, co-authors, reviewers and proofreaders do not edit `.tex` files.
-They read the PDF and mark it up in Acrobat, Preview, Zotero, Okular, an iPad app,
-or they reply with an email listing page numbers. The author then:
+Supervisors, co-authors, peer reviewers and proofreaders do not edit `.tex` files.
+They read the PDF and mark it up in Acrobat, Preview, Zotero, Okular, PDF Expert or
+a tablet app, or they send an email that lists page numbers. The author then:
 
 1. opens the annotated PDF next to the editor,
-2. finds every mark by eye,
-3. hunts for the corresponding sentence in a tree of `\input` files,
+2. finds each mark by eye,
+3. searches for the matching sentence across a tree of `\input` files,
 4. edits, and tries to remember what was done, skipped or disputed,
-5. writes a reply ("fixed", "I disagree because…") — by hand, again.
+5. writes the replies by hand.
 
-For a thesis this repeats for every chapter and every draft; for a paper it ends in
-a hand-written response-to-reviewers letter. Comments get lost, replies drift from
-what was actually changed, and the supervisor has no way to check.
+This repeats for every chapter and every draft of a thesis, and ends in a
+hand-written response letter for a paper. Comments get lost, replies drift away
+from what actually changed, and the reviewer cannot check.
 
-### What exists (researched Nov 2026)
+### 1.1 What exists (surveyed November 2026)
 
-| Tool | What it does | What's missing |
+| Tool | What it does | What is missing |
 |---|---|---|
-| pdfannots (≈680★) | Extracts PDF annotations to Markdown with page + quoted text | No mapping to source files or lines |
-| LaTeX Workshop, TeXstudio, Skim, Okular, Emacs pdf-tools | SyncTeX click-to-jump, one location at a time | No bulk import of annotations, no tracking |
-| pandoc `--track-changes` | DOCX → LaTeX with insertions/deletions kept | Regenerates a *new* `.tex`; your source formatting is gone |
-| Overleaf, OpenAI Prism | In-platform comments and track changes | Reviewer must adopt the platform and read raw LaTeX; no PDF/Word input |
-| 2026 AI "skills" (0–3★) | LLM re-applies Word edits to `.tex` | Non-deterministic, no anchors, no tracking |
+| pdfannots | Extracts PDF annotations to Markdown with page and quoted text | No source file or line |
+| LaTeX Workshop, TeXstudio, Skim, Okular, Emacs pdf-tools | SyncTeX jump for one location at a time | No bulk import, no tracking |
+| pandoc `--track-changes` | DOCX to LaTeX keeping insertions and deletions | Produces a new `.tex`; the author's source and formatting are lost |
+| Overleaf, OpenAI Prism | Comments and track changes inside the platform | Every reviewer must adopt the platform; no PDF or Word input |
+| Small 2026 AI "skills" | An LLM re-applies Word edits to `.tex` | Non-deterministic, no anchors, no tracking |
 
-**Gap:** nothing turns feedback in the formats reviewers *actually* use into a
-precise, trackable list of changes against the *existing* source.
+**Gap:** nothing turns feedback in the formats reviewers actually use into a
+precise, trackable list of changes against the author's existing source.
 
-### Non-goals (and the boundary with overfull)
+### 1.2 Non-goals
 
-[overfull](https://github.com/Amet13/overfull) is the pre-submission check:
-references, compiled-PDF problems, venue rules, templates. proofback never does any
-of that. proofback starts **after** someone has read your document and has opinions.
-The two tools share conventions (JSON output shape, exit codes, agent-first docs) so
-one agent can drive both, but no code and no feature overlap (D-01).
-
-Also out of scope: being an editor, being a collaboration platform, hosting anything,
-grammar checking, generating content.
+- Pre-submission checking (references, PDF problems, venue rules, templates). That is
+  [overfull](https://github.com/Amet13/overfull). proofback starts after someone has
+  read the document. The tools share conventions (JSON shape, `--json`, agent docs),
+  not code or features (D-01).
+- Being an editor, a collaboration platform, or a hosted service.
+- Grammar or style checking, or generating content.
 
 ---
 
-## 2. Users and core workflows
+## 2. Users and workflows
 
-Primary persona: **the author** (student, researcher) who keeps the LaTeX source in a
-folder or git repo, possibly on Overleaf. Secondary: **the reviewer** who never
-installs anything, and **the coding agent** acting for the author.
+- **Author** (primary): keeps LaTeX in a folder or git repository, possibly synced
+  with Overleaf.
+- **Reviewer**: never installs anything and keeps their own tools.
+- **Coding agent**: acts for the author through the CLI or MCP server.
 
-Thesis is the flagship story; any reviewed LaTeX document is supported (D-02).
+Theses are the flagship story. Any reviewed LaTeX document is supported (D-02).
 
-### W1 — Annotated PDF → checklist (v0.1)
+### W1. Annotated PDF to checklist (v0.1)
+
 ```bash
-proofback import review-ch3.pdf --round "supervisor-2026-11"
+proofback import review-ch3.pdf --round supervisor-2026-11
 proofback list
 ```
+
 ```
-#  where                         kind     note
-1  chapters/method.tex:42:17-58  replace  "use 'robust' not 'strong'"        ✓ exact
-2  chapters/method.tex:57        comment  "Why this threshold?"              ✓ line
-3  chapters/results.tex:12:1-88  delete   —                                  ✓ exact
-4  p.14 (figure)                 comment  "axis labels unreadable"           ? figure
+id          where                          kind      note                          anchor
+pb_7k2m9q   chapters/method.tex:41:18-23   replace   Replace with "robust"         exact
+pb_q81fza   chapters/method.tex:42:17-40   comment   Cite the field study here     exact
+pb_3xq1fd   chapters/method.tex:44:1-13    question  Why this threshold?           exact
+pb_d0r4kl   chapters/method.tex:45:1-46:34 delete    (strike-out, no note)         exact
+pb_m2h7tq   p. 15, figure 3.2              comment   Axis labels unreadable        region
 ```
 
-### W2 — Work through it, with or without an agent (v0.2–0.3)
+### W2. Work through it, alone or with an agent (v0.2, v0.3)
+
 ```bash
-proofback patch 1 3 | git apply          # mechanical edits as a reviewable diff
-proofback resolve 2 --reply "Chosen by cross-validation, see §3.4" --status done
-proofback resolve 4 --status wontfix --reply "Figure regenerated in next draft"
+proofback patch pb_7k2m9q pb_d0r4kl | git apply
+proofback resolve pb_3xq1fd --status discuss --reply "Chosen by 5-fold CV, see 3.4"
+proofback resolve pb_m2h7tq --status wontfix --reply "Figure is regenerated in the next draft"
+proofback triage          # keyboard UI for confirming low-confidence items
 ```
-Or in Claude Code / Codex / Cursor: *"work through the open proofback items in
-chapter 3"* — the agent uses the MCP server, proposes edits, and records replies.
 
-### W3 — Send the answers back (v0.2)
+IDs accept unique prefixes, like git (`pb_7k2`). In Claude Code, Codex or Cursor:
+"work through the open proofback items in chapter 3". The agent uses the MCP server,
+proposes edits and records replies.
+
+### W3. Send the answers back (v0.2)
+
 ```bash
-proofback answer -o review-ch3-answered.pdf   # the reviewer's own PDF, every note
-                                              # now carrying status + reply
-proofback letter --format latex > response.tex  # response-to-reviewers letter
+proofback answer -o review-ch3-answered.pdf   # reviewer's own PDF, reply on every note
+proofback letter --format latex > response.tex
 ```
 
-### W4 — The next draft (v0.2)
-After edits, items stay anchored: `proofback sync` re-locates every open item in the
-current source (quote + context selectors, see §5.4) and reports anything it can no
-longer find.
+### W4. Next draft (v0.2)
 
-### W5 — Email / free-text notes (v0.5)
+`proofback sync` re-anchors every open item in the current source and reports
+items that moved, changed (probably addressed) or were lost.
+
+### W5. Notes from an email (v0.5)
+
 ```bash
-proofback import notes.txt   # "p. 12, ¶2: unclear", "§3.1 'state of the art' → 'current'"
+proofback import notes.txt   # "p. 12, para 2: unclear", "3.1: 'state of the art' -> 'current'"
 ```
 
-### W6 — No terminal at all (v0.4)
-Open **proofback.app on GitHub Pages**, drop the annotated PDF, the `.synctex.gz`
-and the source folder (or Overleaf zip). Everything runs locally in WebAssembly —
-nothing is uploaded. Export the checklist, patch, answered PDF or letter.
+### W6. No terminal (v0.4)
 
-### W7 — Word round trip (v0.6)
+Open <https://amet13.github.io/proofback/app/>, drop the annotated PDF, the
+`.synctex.gz` and the sources (folder or Overleaf zip). Everything runs locally in
+WebAssembly. Nothing is uploaded.
+
+### W7. Word round trip (v0.6)
+
 ```bash
-proofback docx export -o thesis-for-review.docx   # with invisible source anchors
-proofback import thesis-reviewed.docx              # tracked changes + comments → items
+proofback docx export -o thesis-for-review.docx   # hidden source anchors embedded
+proofback import thesis-reviewed.docx              # tracked changes and comments become items
 ```
 
-### W8 — In the PR (v0.3)
-The GitHub Action imports a review PDF committed to the repo (or attached to an
-issue) and posts each item as an inline pull-request review comment on the right
-line.
+### W8. Pull request review (v0.3)
+
+A GitHub Action imports a review PDF committed to the repository and posts each item
+as an inline review comment on the right line.
 
 ---
 
@@ -124,344 +137,531 @@ line.
 
 | Surface | Version | Notes |
 |---|---|---|
-| `proofback` CLI | v0.1 | Native single binary: Linux, macOS, Windows; `--json` everywhere |
-| MCP server (`proofback mcp`) | v0.3 | stdio; tools listed in §7 |
-| Agent kit | v0.3 | `AGENTS.md` snippet, Claude Code plugin + skill, Codex/Cursor rules, `llms.txt` |
-| GitHub Action | v0.3 | PR review comments + job summary |
-| Browser app (GitHub Pages) | v0.4 | Same Rust core compiled to WASM; zero upload |
-| npm package | v0.4 | WASM build for Node and `npx proofback` |
-| VS Code extension | v0.7 | Tree view, gutter marks, quick-fix apply, reply box |
-| Typst support | v0.8 | Via the Typst compiler's span/jump API |
+| CLI `proofback` | v0.1 | Single binary for Linux, macOS, Windows (x86-64 and arm64); `--json` everywhere |
+| `proofback triage` | v0.2 | Terminal UI (ratatui) for confirming and resolving items |
+| MCP server `proofback mcp` | v0.3 | stdio transport only |
+| Agent kit | v0.3 | Agent Skill (`SKILL.md`), Claude Code plugin, `AGENTS.md` snippet, Cursor rules, `llms.txt` |
+| GitHub Action | v0.3 | Review comments and job summary |
+| Browser app | v0.4 | Same Rust core as WebAssembly, under `/app` on the website |
+| npm package | v0.4 | WebAssembly build for Node 20+ and `npx proofback` |
+| VS Code extension | v0.7 | Tree view, gutter marks, apply, reply |
+| Typst | v0.8 | Through the Typst compiler's span API |
 
 ---
 
 ## 4. Architecture
 
-### 4.1 Language and runtime (D-04)
+### 4.1 Language (D-04)
 
-**Rust core, compiled twice:** native (CLI, MCP, Action) and `wasm32` (browser,
-npm). One implementation means the browser app and the CLI give identical answers,
-and one golden test suite covers both.
+One Rust core, built for native targets (CLI, MCP, Action) and `wasm32-unknown-unknown`
+(browser, npm). The browser and the CLI therefore give identical answers and share one
+golden test suite. Rust over TypeScript: speed on large theses, a single static binary
+without a runtime, and a direct WebAssembly path. Rust over Python: distribution to
+authors who are not programmers.
 
-Why not TypeScript like overfull: performance on 300-page theses with hundreds of
-annotations, a single static binary with no Node requirement, and a clean WASM
-story. Why not Python: distribution to non-programmer authors.
-
-### 4.2 Workspace layout
+### 4.2 Workspace
 
 ```
 crates/
-  proofback-model     # FeedbackItem, Round, selectors, JSON schema (serde + schemars)
-  proofback-synctex   # streaming .synctex(.gz) parser, inverse/forward search
-  proofback-pdf       # annotation + positioned text extraction (pdfium adapter)
-  proofback-tex       # TeX-aware tokenizer: source ⇄ "rendered text" offset map
-  proofback-anchor    # matching pipeline (§5), confidence scoring
-  proofback-store     # .proofback/ state, rounds, re-anchoring (sync)
-  proofback-emit      # checklist, patch, answered PDF, letter, SARIF, PR comments
-  proofback-notes     # free-text/email note parser (v0.5)
-  proofback-docx      # Word export with anchors + tracked-change import (v0.6)
-  proofback-cli       # clap CLI
-  proofback-mcp       # MCP server (rmcp)
-  proofback-wasm      # wasm-bindgen API for browser + npm
-site/                 # GitHub Pages: landing page, docs, and /app (browser app)
-fixtures/             # golden corpus (§9)
-docs/                 # this plan, ADRs, schema docs
+  proofback-model     items, rounds, selectors, JSON Schema (serde, schemars)
+  proofback-synctex   streaming .synctex(.gz) parser and index
+  proofback-pdf       annotations and positioned text (pdfium adapter behind a trait)
+  proofback-tex       TeX-aware tokenizer with a source <-> rendered-text offset map
+  proofback-anchor    matching pipeline and confidence scoring
+  proofback-store     .proofback/ files, rounds, sync
+  proofback-emit      list, patch, answered PDF, letter, SARIF, review comments
+  proofback-notes     free-text notes (v0.5)
+  proofback-docx      Word export and import (v0.6)
+  proofback-cli       clap CLI and ratatui triage
+  proofback-mcp       MCP server (rmcp)
+  proofback-wasm      wasm-bindgen bindings for browser and npm
+site/                 website and, from v0.4, the browser app
+fixtures/             golden corpus
+docs/                 plan, ADRs, schema, command reference
 ```
 
 ### 4.3 PDF layer (D-05)
 
-**pdfium via `pdfium-render`** for both native and WASM:
-- reads every annotation type we need (Highlight, Underline, StrikeOut, Squiggly,
-  Text/sticky note, FreeText, Caret, Ink, Square/Circle, Line) with QuadPoints,
-  Rect, Contents, RichContents, author, dates, colour, and reply chains (`/IRT`);
-- gives per-character text boxes, so we can read the text *under* a highlight even
-  when the annotating app didn't store it;
-- can **write** annotations, which `answer` needs.
+pdfium through `pdfium-render`, on both native and WebAssembly:
 
-Licences: Apache-2.0 / BSD. Native builds bundle a prebuilt pdfium; the browser
-lazy-loads the pdfium WASM (~4–5 MB, cached by a service worker) only when a PDF is
-dropped, so the landing page stays tiny.
+- reads Highlight, Underline, StrikeOut, Squiggly, Text (sticky note), FreeText,
+  Caret, Ink, Square, Circle and Line annotations with QuadPoints, Rect, Contents,
+  RichContents, author, dates, colour, `/NM` and reply chains (`/IRT`);
+- returns per-character boxes, so the text under a highlight is known even when the
+  annotating app did not store it;
+- writes annotations, which `answer` needs.
 
-Fallback considered: `lopdf` (pure Rust) for annotation dictionaries + own text
-extraction. Rejected for v1: font/encoding/ToUnicode handling is a project in itself.
+pdfium is Apache-2.0/BSD. Native builds bundle a pinned prebuilt pdfium (checksum
+verified in CI; see §10). The browser loads pdfium's WebAssembly build on demand.
+A pure-Rust fallback (`lopdf` plus own text extraction) stays possible behind the
+`proofback-pdf` trait but is not planned for v1.
 
 ### 4.4 SyncTeX layer (D-06)
 
-Own streaming parser (`proofback-synctex`): the format is small and well specified,
-and we need things generic parsers don't expose — every box record for a page, not
-just the "best" hit, so we can score multiple candidate lines. Gzip via
-`miniz_oxide` (WASM-friendly). Target: parse a 300-page thesis's synctex in <150 ms
-native.
+Own streaming parser. The format is small and documented, and proofback needs every
+box record on a page (not only the best hit) to score several candidate lines.
+Decompression uses `miniz_oxide` (pure Rust, WebAssembly-friendly). The parsed index
+is cached in `.proofback/cache/` (git-ignored), keyed by file hash.
 
-If there is no synctex file, the pipeline still works using text alignment only
-(lower confidence, §5.3).
+Paths inside SyncTeX files are normalised (absolute paths, `./` prefixes, Windows
+separators) and must resolve inside the project root.
 
-### 4.5 TeX normalizer (D-07)
+### 4.5 TeX normaliser (D-07)
 
-`proofback-tex` turns source into an approximation of the text that appears in the
-PDF, **keeping a byte-offset map back to the source**:
-- strips comments, most commands, braces; keeps arguments of text commands
-  (`\emph{x}` → `x`), drops `\label`, `\cite`, `\ref` bodies to placeholders;
-- `~`, `\,`, `--`, `---`, quotes, accents (`\'e`), ligatures, `\\`;
-- inline math → a single placeholder token; display math/figures/tables marked as
-  blocks;
-- user macros: simple `\newcommand` without parameters are expanded; others become
-  opaque tokens;
-- follows `\input` / `\include` / `\subfile`, using the synctex file list when present.
+`proofback-tex` produces an approximation of the text the PDF shows, with a map from
+every output character back to a source byte range:
 
-It is deliberately **not** a TeX engine. It only needs to be good enough for fuzzy
-alignment inside a small window that SyncTeX has already narrowed down.
+- drops comments, most commands and braces; keeps arguments of text commands
+  (`\emph{x}` becomes `x`); turns `\cite`, `\ref`, `\label` into placeholders;
+- handles `~`, `\,`, `--`, `---`, TeX quotes, accents, ligatures, `\\`;
+- turns inline math into one placeholder token and marks display math, figures and
+  tables as blocks;
+- expands simple parameterless `\newcommand` macros; other macros become opaque tokens;
+- follows `\input`, `\include` and `\subfile`, preferring the file list from SyncTeX.
+
+It is deliberately not a TeX engine. It only has to support fuzzy alignment inside
+the small window SyncTeX has already found.
+
+### 4.6 Source text rules
+
+- Sources are read as UTF-8. Files in another encoding are detected; anchoring still
+  works but `apply` refuses to write them unless `--encoding` is given.
+- Line endings are preserved on write (LF or CRLF per file).
+- Canonical positions are UTF-8 byte ranges. Lines are 1-based. Columns are 1-based
+  Unicode code points. The MCP server and VS Code extension convert to UTF-16 where
+  their protocols need it.
+
+### 4.7 WebAssembly build
+
+`wasm-bindgen` CLI plus `wasm-opt`, driven by a small `xtask` (wasm-pack is
+unmaintained since the rustwasm organisation was archived in 2025). The core runs in
+a Web Worker so the UI never blocks. The build is single-threaded because GitHub
+Pages cannot send the COOP/COEP headers that `SharedArrayBuffer` threads require.
 
 ---
 
 ## 5. Matching pipeline
 
+**Principle: precision before recall (D-14).** A wrong confident anchor costs the
+author more than an honest "page only". Every stage may lower confidence; none may
+invent it.
+
 For each annotation:
 
-1. **Extract** — type, page, quads/rect, note text, author, date, colour, replies.
-2. **Read the marked text** — characters inside the quads, plus ~80 chars of context
-   before and after (from the PDF text layer). Handle hyphenation at line ends and
-   two-column layouts.
-3. **Coarse locate (SyncTeX)** — inverse search for each quad (centre + corners) →
-   ranked candidate `(file, line)` set. For point annotations (sticky notes), take
-   the nearest text line on the page.
-4. **Fine locate (text alignment)** — normalise the candidate lines ±N lines with
-   `proofback-tex`, then align the marked text + context using a banded
-   Smith–Waterman / bitap search. Map the hit back through the offset map to an
-   exact source byte range.
-5. **Classify** the item: `comment`, `question`, `delete`, `insert`, `replace`,
-   `highlight`, `figure`, `math`, `general`. StrikeOut + note → `replace` with a
-   suggested replacement; Caret + FreeText → `insert`; strike-out alone → `delete`.
-6. **Score** confidence: `exact` (character range) / `line` / `region` (figure,
-   table, display math) / `page` (gave up; needs a human). Each score comes with a
-   human-readable reason.
+1. **Extract** type, page, quads or rect, note text, author, date, colour, `/NM`,
+   replies.
+2. **Read the marked text** under the quads plus about 80 characters of context on
+   each side, handling hyphenation at line ends and multi-column layouts.
+3. **Coarse locate.** SyncTeX inverse search for each quad (centre and corners) gives
+   a ranked set of `(file, line)` candidates. Point annotations use the nearest text
+   line on the page.
+4. **Fine locate.** Normalise the candidate lines plus a margin with `proofback-tex`
+   and align the marked text with its context (banded Smith-Waterman, bitap for
+   short quotes). Map the hit back through the offset map to a source byte range.
+5. **Classify**: `comment`, `question`, `delete`, `insert`, `replace`, `highlight`,
+   `figure`, `math`, `general`. StrikeOut with a note becomes `replace` with a
+   suggested replacement; Caret with text becomes `insert`; StrikeOut alone becomes
+   `delete`.
+6. **Score**: `exact` (character range), `line`, `region` (figure, table, display
+   math), or `page` (needs a human). Each level carries a readable reason. An
+   alignment with two near-equal hits is never `exact`.
 
-### 5.1 Hard cases we design for from day one
-Two-column layouts; hyphenated words across lines; ligatures; text produced by macros;
-`\input` trees; floats placed far from their source; captions; footnotes; display
-math; tables; generated text (bibliography, TOC — flagged as `generated` and pointed
-at the `.bib` key or heading where possible); Cyrillic/CJK via XeLaTeX/LuaLaTeX;
-reviewer annotated an **older draft** than the current source.
+### 5.1 Hard cases designed for from the start
+
+Two-column layouts; hyphenation; ligatures; text produced by macros; `\input` trees;
+floats placed far from their source; captions; footnotes; display math; tables;
+generated text (bibliography, table of contents), flagged `generated` and pointed at
+the `.bib` key or heading where possible; XeLaTeX and LuaLaTeX with non-Latin scripts
+(Greek, Arabic, CJK); and a reviewer who annotated an older draft.
 
 ### 5.2 Draft mismatch
-Each round records the git commit (if any) and a hash of the PDF and synctex it was
-imported against. If the reviewer's PDF is older than the current source:
-`proofback import review.pdf --synctex old.synctex.gz --at <commit>` resolves
-against that commit's files, then `sync` carries the anchors forward to `HEAD`.
-If only the PDF exists, step 4 runs against the whole project (text-only mode).
+
+Each round records the git commit (when available) and hashes of the PDF and SyncTeX
+file it was imported against. For an older PDF:
+`proofback import review.pdf --synctex old.synctex.gz --at <commit>` anchors against
+that commit's files (read through git plumbing, never a shell), then `sync` carries
+the anchors forward to the working tree. With only a PDF, step 4 runs against the
+whole project (text-only mode).
 
 ### 5.3 Text-only mode
-Without synctex: full-project fuzzy search for the marked text + context, using
-page order as a prior. Expect lower `exact` rates; the accuracy report (§9) measures
-both modes separately.
 
-### 5.4 Anchors (the data that survives edits)
-Each item stores W3C Web Annotation–style selectors:
-- `TextQuoteSelector` — exact quote + prefix + suffix (normalised),
-- `TextPositionSelector` — file + byte range + line/column at the recorded commit,
-- `PdfSelector` — page, quads, PDF hash (provenance; never used to re-anchor).
+Without SyncTeX, proofback searches the whole project for the marked text and context,
+using page order as a prior. Confidence is capped at `line` unless the match is
+unique and long. Accuracy is reported separately for this mode.
 
-`sync` re-anchors by quote+context first, position second, and reports `moved`,
-`changed` (quote edited — probably addressed), or `lost`.
+### 5.4 Anchors that survive edits
+
+Each item stores W3C Web Annotation style selectors:
+
+- `TextQuoteSelector`: normalised quote, prefix and suffix;
+- `TextPositionSelector`: file, byte range, line and column at the recorded commit;
+- `PdfSelector`: page, quads, PDF hash (provenance only, never used to re-anchor).
+
+`sync` tries quote and context first, then position, and sets the item's
+`anchor.state` to `anchored`, `moved`, `changed` or `lost`.
 
 ---
 
-## 6. Data model and state
+## 6. Data model
 
-All state lives in the author's project, committed to git (D-08), never on a
-server:
+All state is plain files in the author's project, committed with it (D-08):
 
 ```
 .proofback/
-  config.toml                 # project root, main file, build dir, default author
+  config.toml                  project root, main file, build directory, defaults
   rounds/
     2026-11-25-supervisor.json
     2027-01-10-reviewer-2.json
+  cache/                       git-ignored; parsed SyncTeX and text indexes
 ```
 
-`FeedbackItem` (JSON, versioned schema published at `site/schema/v1.json`):
+Round files are written deterministically (items sorted by id, stable key order,
+two-space indent, trailing newline) so git diffs and merges stay readable.
+
+### 6.1 Item
+
+Schema: `https://amet13.github.io/proofback/schema/v1.json`. Every round file names
+it in `$schema` and carries `schema_version`.
+
 ```jsonc
 {
-  "id": "pb_7k2m9q",                 // stable, short, human-typeable
+  "id": "pb_7k2m9q",
   "round": "2026-11-25-supervisor",
   "kind": "replace",
-  "author": "Dr. Ivanova",
+  "author": "Prof. Hale",
   "created": "2026-11-24T18:03:00Z",
-  "body": "use 'robust' not 'strong'",
+  "body": "Replace with \"robust\"",
   "suggestion": { "replace_with": "robust" },
   "target": {
     "file": "chapters/method.tex",
     "range": { "start": 1832, "end": 1838 },
-    "line": 42, "column": 17,
-    "quote": { "exact": "strong", "prefix": "the estimator is ", "suffix": " under" }
+    "line": 41, "column": 18,
+    "quote": { "exact": "strong", "prefix": "The estimator is ", "suffix": " under" }
   },
-  "origin": { "type": "pdf", "page": 14, "quads": [[…]], "pdf_sha256": "…" },
-  "confidence": { "level": "exact", "reason": "synctex line + unique text match" },
-  "status": "open",                  // open | done | wontfix | discuss | duplicate
-  "replies": [ { "author": "me", "body": "…", "at": "…" } ],
+  "anchor": { "state": "anchored", "confidence": "exact",
+              "reason": "SyncTeX line 41 and a unique text match" },
+  "origin": { "type": "pdf", "page": 14, "nm": "a7f3...", "quads": [[0, 0, 0, 0, 0, 0, 0, 0]],
+              "pdf_sha256": "..." },
+  "status": "open",
+  "replies": [{ "author": "me", "body": "...", "at": "2026-11-26T09:12:00Z" }],
   "resolution": { "commit": null }
 }
 ```
 
-Exit codes follow overfull's convention so CI scripts can treat both alike:
-`0` ok, `1` open items remain (only with `--fail-on-open`), `2` usage error,
-`3` input error.
+- **IDs** are `pb_` plus 6 to 8 base32 characters of a hash of the round and the
+  annotation's identity (`/NM` when present, otherwise page, type and quads).
+  Re-importing the same PDF is therefore idempotent and never duplicates items.
+- **Status** (the author's decision): `open`, `done`, `wontfix`, `discuss`,
+  `duplicate`. **Anchor state** (proofback's knowledge): separate, see §5.4.
+- **Authors**: stored as written in the PDF. `--anonymize-authors` replaces them with
+  `Reviewer 1`, `Reviewer 2` for blind review (see §10).
 
 ---
 
-## 7. AI compatibility (D-09)
+## 7. Command reference
 
-Principle: **the core is deterministic and offline; AI is a client, not a
-dependency.**
-
-- **Structured context for agents.** `proofback show <id> --json` returns the item,
-  the exact source range, ±20 lines of context, the reviewer's quote and the PDF
-  page text — everything an agent needs to make a good edit without opening a PDF.
-- **MCP server** (`proofback mcp`), tools:
-  `list_items(filter)`, `get_item(id, context_lines)`, `propose_patch(id, diff)`
-  (validates the diff applies and touches the anchored range), `apply_patch(id)`,
-  `resolve_item(id, status, reply)`, `sync()`, `export(format)`.
-- **Agent kit:** a Claude Code plugin + skill ("work through review feedback"),
-  an `AGENTS.md` snippet for any agent, Codex/Cursor rule files, and `llms.txt` /
-  `llms-full.txt` on the website.
-- **Guard rails:** agents may *propose* edits and replies; `resolve` with status
-  `done` requires the anchored range to have actually changed (or `--force`), so an
-  agent can't silently mark things fixed.
-- **Optional built-in suggestions** (v0.5): `proofback suggest <id>` calls a model
-  the user configures (Anthropic, OpenAI-compatible, or local via Ollama) and
-  returns a patch for review. Off by default, never applied automatically, never
-  sends anything unless configured.
-- **AI-assisted parsing** for the messy inputs only: free-text notes (v0.5) and
-  handwritten scans (experimental, v0.9) — always shown with low confidence until
-  confirmed.
-
----
-
-## 8. Outputs
-
-| Command | Output |
+| Command | Purpose |
 |---|---|
-| `list` | Terminal table, `--json`, `--md` (GitHub task list) |
-| `show <id>` | Item with source context |
-| `patch [ids]` | Unified diff for mechanical items (replace / delete / insert) |
-| `apply [ids]` | Same, written to disk (refuses on dirty anchored ranges) |
-| `inline` | Optional `% proofback pb_7k2m9q: …` comments or `\todo{}` (todonotes) in source |
-| `answer -o file.pdf` | The reviewer's PDF with a reply annotation on every note: status + response |
-| `letter` | Response-to-reviewers / supervisor reply: LaTeX, Markdown, or DOCX |
-| `sarif` | SARIF for GitHub code scanning (inline marks on PR diffs) |
-| `gh review` | PR review comments (Action) |
-| `stats` | Per round: open/done/wontfix, by chapter, by reviewer |
+| `init` | Create `.proofback/config.toml` and the cache ignore rule |
+| `import <file>` | Import a PDF (v0.1), notes file (v0.5) or DOCX (v0.6) as a round |
+| `list` | Items as a table, `--json`, or `--md` (GitHub task list); filters by round, status, file, kind |
+| `show <id>` | One item with source context |
+| `triage` | Terminal UI to confirm, resolve and reply (v0.2) |
+| `resolve <id>` | Set status and reply |
+| `patch [ids]` | Unified diff for `replace`, `delete`, `insert` items |
+| `apply [ids]` | Write those edits (refuses if the anchored text changed since import) |
+| `sync` | Re-anchor items to the current source |
+| `answer -o <pdf>` | Reviewer's PDF with a reply annotation on every note |
+| `letter` | Response letter as LaTeX, Markdown or DOCX |
+| `inline` | Optional `% proofback pb_xxx:` comments or `\todo{}` in the source |
+| `sarif` | SARIF for GitHub code scanning |
+| `stats` | Counts by round, status, file and reviewer |
+| `mcp` | Run the MCP server on stdio (v0.3) |
+| `doctor` | Check SyncTeX presence, encodings and project root |
+
+Global flags: `--json`, `--project <dir>`, `--quiet`, `--color auto|always|never`.
+
+**Exit codes** (D-15): `0` success; `1` open items remain (only with `--fail-on-open`);
+`2` usage error; `3` unreadable or invalid input; `4` refused write (dirty anchor,
+encoding, path outside project).
+
+`--json` output is stable within a schema version and documented per command.
 
 ---
 
-## 9. Quality: accuracy you can check (D-10)
+## 8. AI and agents (D-09)
 
-Accuracy is the product. We publish it.
+Principle: **the core is deterministic and offline; AI is a client, not a dependency.**
 
-- **Golden corpus** in `fixtures/`: ~15 real-shaped LaTeX projects (article,
-  two-column paper, 150-page thesis with `\input` tree, beamer, math-heavy,
-  tables/figures, XeLaTeX Cyrillic, LuaLaTeX CJK, biblatex, custom macros).
-  Built in CI with pinned TeX Live containers (2023–2026) to catch engine drift.
-- **Synthetic ground truth:** a generator uses SyncTeX *forward* search to place
-  annotations of every type on known source ranges, writing them into the PDF the
-  way Acrobat, Preview, Okular, Zotero and PDF Expert do (each app has quirks:
-  quad order, missing `/Contents`, flattened replies).
-- **Real-world set:** donated, anonymised reviewer PDFs (opt-in, with licence).
-- **Metrics:** exact-range precision/recall, line accuracy, `page`-fallback rate —
-  per annotation type, per layout, with/without synctex. Published on the site as
-  `/accuracy` and regenerated by CI on every release. Release gate: no regression.
-- **Performance budget** (criterion benches, CI-gated): 300-page thesis + 500
-  annotations — import < 1 s native, < 3 s in browser; `sync` < 300 ms.
-- Unit + property tests (`proptest`) for the offset map: every normalised character
-  must map back inside its source token.
-
----
-
-## 10. Browser app (v0.4)
-
-- Lives at `/app` on the GitHub Pages site; loads the WASM core and pdfium on demand.
-- Inputs: annotated PDF + `.synctex.gz` + sources (folder via File System Access
-  API, or a `.zip` such as Overleaf's download). Overleaf: the synctex file is under
-  *Logs and output files → Other logs and files*.
-- UI: three panes — reviewer's PDF with numbered marks · item list · source with the
-  anchored range highlighted. Keyboard-first (j/k, d = done, w = won't fix, r = reply).
-- Exports: `.proofback/` round JSON, patch, Markdown checklist, answered PDF, letter.
-- Zero network after load; works offline (service worker); no analytics.
+- **Context for agents.** `show <id> --json` returns the item, the exact source
+  range, configurable surrounding lines, the reviewer's quote and the PDF page text.
+- **MCP server** (`proofback mcp`, stdio): `list_items`, `get_item`, `propose_patch`
+  (checks the diff applies and touches the anchored range), `apply_patch`,
+  `resolve_item`, `sync`, `export`. Targets the current MCP specification; no
+  network transport.
+- **Agent kit.** An Agent Skill ("work through review feedback") in the open
+  `SKILL.md` format, a Claude Code plugin, an `AGENTS.md` snippet, Cursor rules, and
+  `llms.txt` on the website.
+- **Guard rails.**
+  - `done` on an edit item (`replace`, `delete`, `insert`) requires the anchored text
+    to have changed, unless `--force` is given by a human.
+  - `done` on a `comment` or `question` requires a reply.
+  - Reviewer text is returned to agents inside a clearly delimited
+    `untrusted_reviewer_text` field and documented as data, never instructions
+    (prompt-injection defence; see §10).
+  - proofback never runs commands and only touches files inside the project root.
+- **Optional suggestions** (v0.5). `proofback suggest <id>` calls a model the user
+  configures (Anthropic, any OpenAI-compatible endpoint, or a local model). Off by
+  default. Shows exactly what will be sent before the first call per project. Never
+  applies anything automatically.
+- **AI-assisted parsing** only for messy inputs: free-text notes (v0.5) and photos of
+  handwritten marks (experimental, after v0.8). Results start at `page` confidence
+  until the author confirms them.
 
 ---
 
-## 11. Word round trip (v0.6)
+## 9. Outputs
 
-The hard part of Word is mapping edits back. proofback solves it at **export**:
-- `docx export` builds the DOCX with make4ht (best fidelity) or pandoc, and embeds an
-  invisible bookmark per paragraph/sentence carrying `file:byte-range`.
-- On import, tracked changes (`w:ins`, `w:del`), comments (`comments.xml`,
-  `commentRangeStart/End`) and replies are read directly from the XML and resolved
-  via the nearest bookmarks + text alignment — the same pipeline as §5, so DOCX
-  items are first-class `FeedbackItem`s.
+| Output | Notes |
+|---|---|
+| Terminal list | Grouped by file; colour only on a TTY |
+| JSON | Schema-validated, stable per schema version |
+| Markdown | GitHub task list, one line per item with a link to file and line |
+| Unified diff | Standard `git apply` format |
+| Answered PDF | New file; the original is never modified; status and reply added as replies to each note |
+| Response letter | LaTeX, Markdown, DOCX; quotes the reviewer, states the change, links the commit |
+| SARIF 2.1.0 | For code scanning annotations in pull requests |
+| Review comments | Through the GitHub Action |
+
+---
+
+## 10. Security and privacy (D-16)
+
+proofback reads files written by other people (PDFs, DOCX, notes) and can write to
+the author's source. The threat model:
+
+| Threat | Mitigation |
+|---|---|
+| Malicious PDF exploiting the PDF parser | pdfium is fuzzed upstream and pinned to a recent Chromium branch; proofback updates it on every Chromium security release. In the browser it runs inside the WebAssembly sandbox. Native imports parse the PDF in a child process with memory and time limits. proofback's own parsers are fuzzed with `cargo-fuzz` in CI. |
+| Decompression bombs (`.synctex.gz`, DOCX zip, PDF streams) | Hard limits on decompressed size, entry count, page count and annotation count, all configurable. |
+| XML attacks in DOCX | `quick-xml` with no DTD or external entity resolution. |
+| Path traversal (SyncTeX paths, `\input`, zip entries, `--at` checkouts) | Every path is canonicalised and must stay inside the project root; symlinks leaving the root are refused. |
+| Unwanted writes | Only `apply`, `inline` and `resolve` write. `apply` checks the anchored text is unchanged and never writes outside the root. `--dry-run` everywhere. |
+| Prompt injection through reviewer comments | Reviewer text is marked untrusted in JSON and MCP output; the agent kit tells agents to treat it as data; proofback exposes no tool that runs commands. |
+| Leaking source to an AI provider | `suggest` is off by default, needs per-project consent, shows the payload, and reads API keys from the environment or the OS keychain, never from committed files. |
+| Reviewer identity in blind review | `--anonymize-authors` on import; `answer` and `letter` strip PDF metadata (author, creator tool, local paths). |
+| GitHub Action abuse | Runs on `pull_request` with a read-only token by default; posting comments uses a separate `workflow_run` job; all third-party actions pinned by commit SHA; least-privilege `permissions`. |
+| Supply chain | `cargo-deny` (licences, advisories, sources), `cargo-vet` for new dependencies, Dependabot, reproducible release builds, Sigstore-signed artefacts with SLSA build provenance, npm provenance, pinned pdfium binaries with checksums. |
+| Website | No third-party requests (fonts self-hosted), Content Security Policy, no cookies or analytics. |
+
+Vulnerabilities are reported privately through GitHub security advisories
+(`SECURITY.md`). No telemetry anywhere in the project.
+
+---
+
+## 11. Performance (D-17)
+
+Reference machine: a GitHub-hosted `ubuntu-latest` runner (4 vCPU). Reference input:
+a 300-page thesis, 40 source files, 500 annotations.
+
+| Operation | Budget (native) | Budget (browser) |
+|---|---|---|
+| `import`, cold cache | under 1 s | under 3 s |
+| `import`, warm cache | under 300 ms | under 1 s |
+| `list` | under 50 ms | not applicable |
+| `sync` | under 300 ms | under 1 s |
+| Peak memory | under 300 MB | under 400 MB |
+| Browser app first load (excluding pdfium) | not applicable | under 150 KB compressed JS and WASM |
+
+How:
+
+- SyncTeX is streamed and indexed by page; only pages that carry annotations are
+  fully decoded.
+- PDF text is extracted only for annotated pages.
+- Pages are processed in parallel with `rayon` natively; in the browser, the worker
+  processes them in order and reports progress.
+- Indexes are cached by content hash in `.proofback/cache/`.
+- pdfium's WebAssembly build is fetched only when a PDF is dropped and then cached.
+- Criterion benchmarks run in CI; a regression above 10% fails the build.
+
+---
+
+## 12. Quality and accuracy (D-10)
+
+- **Golden corpus** in `fixtures/`: about 15 projects (article, two-column paper,
+  150-page thesis with an `\input` tree, beamer, maths-heavy, tables and figures,
+  XeLaTeX with Greek and Arabic, LuaLaTeX CJK, biblatex, custom macros), built in CI
+  with pinned TeX Live images from 2023 to 2026.
+- **Synthetic ground truth.** A generator uses SyncTeX forward search to place every
+  annotation type on known source ranges and writes it the way Acrobat, Preview,
+  Okular, Zotero and PDF Expert do (each has quirks: quad order, missing `/Contents`,
+  flattened replies).
+- **Real-world set.** Donated, anonymised review PDFs, opt-in, under CC BY 4.0.
+- **Metrics**, per annotation type, layout and mode:
+  - exact-range precision and recall,
+  - correct-line rate,
+  - wrong-anchor rate (any confident anchor that is wrong),
+  - `page` fallback rate.
+- **Release gates**: wrong-anchor rate under 1%; no metric regresses. Results are
+  published on the website at every release.
+- Property tests (`proptest`) for the offset map: every normalised character maps
+  back inside its source token. Fuzzing for SyncTeX, notes and DOCX parsers.
+
+---
+
+## 13. Browser app (v0.4)
+
+- Lives at `/app` on the website. Loads the core in a Web Worker and pdfium on demand.
+- Inputs: annotated PDF, `.synctex.gz`, and sources as a folder (File System Access
+  API in Chromium, `<input webkitdirectory>` elsewhere) or a zip such as Overleaf's
+  download. The Overleaf location of the SyncTeX file is documented once verified
+  against the current Overleaf UI.
+- Layout: reviewer's PDF with numbered marks, item list, source with the anchored
+  range highlighted. Keyboard first: `j`/`k` move, `d` done, `w` won't fix, `r` reply.
+- Exports: round JSON, patch, Markdown, answered PDF, letter.
+- Offline after first load (service worker). No network requests with user data.
+
+---
+
+## 14. Word round trip (v0.6)
+
+Mapping Word edits back is solved at export time:
+
+- `docx export` builds the DOCX with make4ht (best fidelity) or pandoc and embeds a
+  hidden bookmark per paragraph carrying the source byte range.
+- `import` reads tracked changes (`w:ins`, `w:del`), comments
+  (`comments.xml`, `commentRangeStart`/`End`) and replies straight from the XML, and
+  resolves them through the nearest bookmarks and the §5 alignment. DOCX items are
+  ordinary items.
 - A DOCX not exported by proofback still works in text-only mode.
 
 ---
 
-## 12. Roadmap
+## 15. Website (D-13)
+
+- Static HTML, CSS and a small script; no build step; deployed by GitHub Actions to
+  GitHub Pages. The browser app joins under `/app` in v0.4.
+- Visual language taken from the product: PDF-viewer grey, highlighter yellow for
+  reviewer marks and the main action, red only for strike-outs, blue for anything
+  proofback links. The demo page is set in Libertinus Serif to look like a typeset
+  paper. Common AI-generated design defaults are avoided on purpose.
+- Fonts self-hosted and subset (about 120 KB total). No third-party requests.
+- Content Security Policy via `<meta>`; the one inline script is allowed by hash.
+- Accessibility: WCAG 2.2 AA contrast in both themes, keyboard-operable demo,
+  `aria-pressed` state, live region for the demo output, reduced-motion respected.
+- `llms.txt`, Open Graph image, 404 page.
+- CI checks every pull request: HTML validation and a headless-browser smoke test
+  (no console errors, no horizontal overflow at 390 px).
+
+---
+
+## 16. Roadmap
 
 | Milestone | Scope | Exit criteria |
 |---|---|---|
-| **M0 — Reset** (this PR) | Repo reset, plan, website, Pages deploy | Site live; plan agreed |
-| **M1 — Foundations** | Workspace, `model`, `synctex`, `tex` offset map, fixture builder in CI | Synctex parser fuzzed; offset-map property tests green |
-| **M2 — v0.1 Import** | `pdf`, `anchor`, `import` / `list` / `show` | ≥90 % exact-range on synthetic corpus with synctex; perf budget met |
-| **M3 — v0.2 Close the loop** | `store`, `resolve`, `patch`, `apply`, `sync`, `answer`, `letter`, binaries via cargo-dist + Homebrew | An entire review round done end-to-end on a fixture thesis |
-| **M4 — v0.3 Agents & CI** | MCP server, plugin/skill, AGENTS.md kit, GitHub Action, SARIF | Agent completes a review round on fixtures in an eval |
-| **M5 — v0.4 Browser** | WASM build, `/app`, npm package | Same golden results in browser as native |
-| **M6 — v0.5 Notes & suggest** | Free-text notes parser, optional `suggest` | — |
-| **M7 — v0.6 Word** | DOCX export with anchors + import | Round trip on fixtures ≥90 % exact |
-| **M8 — v0.7–0.8** | VS Code extension, Typst | — |
-| **v1.0** | Schema v1 frozen, accuracy report public, docs complete | — |
+| **M0** | Repository reset, plan, website, Pages deploy | Site live, plan final |
+| **M1 Foundations** | Workspace, `model`, `synctex`, `tex` offset map, fixture builder in CI, fuzzing harness | SyncTeX parser fuzzed for 1 CPU-hour without crashes; offset-map property tests green |
+| **M2 = v0.1 Import** | `pdf`, `anchor`, `init`, `import`, `list`, `show`, `doctor` | Synthetic corpus with SyncTeX: exact-range recall at least 90%, wrong-anchor rate under 1%; performance budgets met |
+| **M3 = v0.2 Close the loop** | `store`, `triage`, `resolve`, `patch`, `apply`, `sync`, `answer`, `letter`; release pipeline (dist, Homebrew, signed artefacts) | A full review round done end to end on a fixture thesis |
+| **M4 = v0.3 Agents and CI** | MCP server, agent kit, GitHub Action, SARIF | An agent completes a review round on fixtures in an automated eval |
+| **M5 = v0.4 Browser** | WebAssembly build, `/app`, npm package | Browser results identical to native on the corpus |
+| **M6 = v0.5 Notes** | Notes parser, optional `suggest` | Notes corpus: wrong-anchor rate under 1% |
+| **M7 = v0.6 Word** | DOCX export with anchors, DOCX import | Round trip on fixtures: exact-range recall at least 90% |
+| **M8 = v0.7, v0.8** | VS Code extension, Typst | Same golden suite passes for Typst fixtures |
+| **v1.0** | Schema v1 frozen, documentation complete, accuracy report public | No open security advisories; all gates green |
 
 ---
 
-## 13. Engineering conventions
+## 17. Engineering conventions
 
-- Rust 2024 edition, MSRV pinned; `clippy -D warnings`, `rustfmt`, `cargo deny`.
-- Releases: cargo-dist (GitHub Releases, shell/PowerShell installers, Homebrew tap),
-  crates.io, npm (WASM). Signed artefacts + SLSA provenance.
-- CI: lint · test · golden accuracy · benches · WASM build · site build/deploy.
-- Conventional commits; changelog generated on release.
-- Licence: **MIT OR Apache-2.0** (D-11). Fixtures donated under CC BY 4.0.
-- Privacy: no telemetry, no network calls unless the user configures `suggest`.
-- Docs are agent-first: every command documented with a runnable example and its
-  JSON output shape.
+- Rust 2024 edition, pinned MSRV, `rustfmt`, `clippy -D warnings`.
+- Semantic versioning for the tool; the JSON schema is versioned separately.
+- CI: lint, test, golden accuracy, benchmarks, fuzz smoke run, WebAssembly build,
+  site checks, Pages deploy. Every third-party action pinned by commit SHA.
+- Releases with `dist` (formerly cargo-dist): GitHub Releases, shell and PowerShell
+  installers, Homebrew tap, crates.io, npm.
+- Conventional commits; changelog generated at release.
+- Licence MIT OR Apache-2.0 (D-11). Fixtures CC BY 4.0. Bundled fonts SIL OFL 1.1.
+- Docs are written for people and agents: each command has a runnable example and
+  its JSON shape.
 
 ---
 
-## 14. Risks
+## 18. Risks
 
 | Risk | Mitigation |
 |---|---|
-| pdfium WASM size / build complexity | Lazy load + cache; `lopdf` fallback path kept possible behind the `proofback-pdf` trait |
-| SyncTeX is line-level and noisy with macros/floats | Text alignment does the fine work; confidence levels are honest; corpus measures it |
-| Reviewers' PDF apps write annotations inconsistently | Per-app fixtures; quirks table in docs |
-| Draft drift between review and current source | `--at <commit>` + quote/context re-anchoring |
-| Overleaf users without git | Browser app accepts Overleaf zips; state exported as a file |
-| "Yet another AI wrapper" perception | Deterministic core, published accuracy, AI strictly optional |
-| Scope creep into overfull's territory | §1 boundary; no checks of document quality, ever |
+| pdfium size and build complexity in the browser | On-demand load and caching; the PDF trait keeps a pure-Rust fallback possible |
+| pdfium security updates lag | Track Chromium releases; automated update PR; child-process isolation natively |
+| SyncTeX is line-level and noisy around macros and floats | Text alignment does the fine work; honest confidence; measured on the corpus |
+| PDF apps write annotations inconsistently | Per-app fixtures and a documented quirks table |
+| Draft drift between review and current source | `--at <commit>` plus quote-and-context re-anchoring |
+| Overleaf users without git | Browser app accepts Overleaf zips; state exported as files |
+| Perception as "another AI wrapper" | Deterministic core, published accuracy, AI strictly optional |
+| Scope creep into overfull's area | §1.2 boundary: no document-quality checks |
 
 ---
 
-## 15. Decision log
+## 19. Audit and grill log
+
+The plan was reviewed for correctness, performance, UX, security, privacy and
+current tooling before being marked final. Each finding and its resolution:
+
+| # | Area | Finding | Resolution |
+|---|---|---|---|
+| 1 | Correctness | Example output used numeric IDs in one place and `pb_` IDs elsewhere | `pb_` IDs everywhere, with unique-prefix matching (§2, §6.1) |
+| 2 | Correctness | Item status mixed the author's decision with anchoring state | Separate `status` and `anchor.state` (§5.4, §6.1) |
+| 3 | Correctness | "`done` requires the text to change" made no sense for questions | Rule applies to edit kinds only; questions need a reply (§8) |
+| 4 | Correctness | Re-importing a PDF could duplicate items | Deterministic IDs from `/NM` or annotation identity (§6.1) |
+| 5 | Correctness | Offsets were undefined for non-ASCII text and editors | UTF-8 byte ranges, code-point columns, UTF-16 at protocol edges (§4.6) |
+| 6 | Correctness | Non-UTF-8 sources and CRLF files could be corrupted by `apply` | Encoding detection, refusal without `--encoding`, line endings preserved (§4.6) |
+| 7 | Correctness | Exit codes claimed to match another project without checking | Own exit codes defined (§7) |
+| 8 | Correctness | Overleaf SyncTeX location stated without verification | Marked to verify before documenting (§13) |
+| 9 | Correctness | Browser app URL pointed at a domain we do not own | Uses the GitHub Pages URL (§2 W6) |
+| 10 | Quality | Accuracy targets measured recall only | Wrong-anchor rate under 1% is a release gate; precision before recall (§5, §12) |
+| 11 | Security | No threat model | Added (§10) |
+| 12 | Security | Untrusted PDFs, archives and XML parsed without limits | Size and count limits, no XML entities, child-process isolation, fuzzing (§10) |
+| 13 | Security | Paths from SyncTeX, `\input` and zips could escape the project | Canonicalised and confined to the root (§4.4, §10) |
+| 14 | Security | Reviewer comments passed to agents could carry prompt injection | Marked untrusted; no command-running tools (§8, §10) |
+| 15 | Security | GitHub Action permissions and action pinning unspecified | Read-only default, `workflow_run` for comments, SHA pinning (§10, §17) |
+| 16 | Security | Supply chain unspecified | cargo-deny, cargo-vet, signed artefacts, provenance, pinned pdfium (§10) |
+| 17 | Privacy | Reviewer names committed to git break blind review | `--anonymize-authors`; metadata stripped from outputs (§6.1, §10) |
+| 18 | Privacy | `suggest` could send source to a provider silently | Off by default, consent, payload preview, keys never committed (§8) |
+| 19 | Privacy | Website loaded fonts from Google and jsDelivr | Fonts self-hosted and subset; CSP added (§15) |
+| 20 | Performance | Budgets had no reference hardware or memory limit | Reference runner, cold and warm budgets, memory caps (§11) |
+| 21 | Performance | Whole-document parsing on every run | Annotated pages only, content-hash cache, parallel pages (§11) |
+| 22 | Performance | Browser threading assumed | Single-threaded worker; GitHub Pages cannot send COOP/COEP (§4.7) |
+| 23 | Modernity | Plan relied on wasm-pack | `wasm-bindgen` CLI and `wasm-opt` via `xtask` (§4.7) |
+| 24 | Modernity | Tool names out of date | `dist` (formerly cargo-dist); Agent Skills format; current MCP spec (§8, §17) |
+| 25 | Modernity | File System Access API is Chromium-only | Fallback to directory input and zip (§13) |
+| 26 | UX | No way to confirm low-confidence items quickly | `triage` terminal UI (§3, §7) |
+| 27 | UX | Command set undocumented | Command reference with flags and exit codes (§7) |
+| 28 | UX | Round files would produce noisy git diffs | Deterministic serialisation (§6) |
+| 29 | Website | Default AI-generated look | Redesigned from the product's own visual language (§15) |
+| 30 | Website | Demo marks hid their text from screen readers; theme toggle had no state | Visible text kept, `aria-pressed` added, live region kept (§15) |
+| 31 | Website | No validation in CI, actions pinned by tag only | HTML validation and browser smoke test on pull requests; SHA-pinned actions (§15) |
+| 32 | Content | Example names were not neutral | Neutral placeholder names (`Prof. Hale`, `Reviewer 1`) |
+
+---
+
+## 20. Decision log
 
 | ID | Decision |
 |---|---|
 | D-01 | Independent of overfull; shared conventions only |
-| D-02 | Any reviewed LaTeX document; thesis is the flagship story; Typst later |
-| D-03 | CLI → MCP/agents/Action → browser app → VS Code |
-| D-04 | Rust core, native + WASM |
-| D-05 | pdfium (pdfium-render) for annotations, text boxes and writing replies |
+| D-02 | Any reviewed LaTeX document; theses are the flagship story; Typst later |
+| D-03 | Order of surfaces: CLI, then MCP/agents/Action, then browser app, then VS Code |
+| D-04 | One Rust core for native and WebAssembly |
+| D-05 | pdfium (via pdfium-render) for annotations, text boxes and writing replies |
 | D-06 | Own streaming SyncTeX parser |
-| D-07 | TeX normaliser with offset map, not a TeX engine |
-| D-08 | State in `.proofback/` in the author's repo; no server |
-| D-09 | Deterministic core; AI via MCP/agents; built-in suggestions optional |
-| D-10 | Published, CI-gated accuracy metrics |
+| D-07 | TeX normaliser with an offset map, not a TeX engine |
+| D-08 | State in `.proofback/` in the author's repository; no server |
+| D-09 | Deterministic core; AI through MCP and agents; built-in suggestions optional |
+| D-10 | Accuracy measured in CI and published every release |
 | D-11 | MIT OR Apache-2.0 |
-| D-12 | Name **proofback** — free on GitHub, npm and crates.io (checked 2026-11-25) |
-| D-13 | Website styled after the product itself (PDF-viewer grey, highlighter yellow, strike-out red, mapping blue; Computer Modern on the demo page), avoiding common AI-generated design defaults; dependency-free static HTML/CSS/JS on GitHub Pages; app added under `/app` in M5 |
+| D-12 | Name **proofback**; free on GitHub, npm and crates.io when checked (2026-11-25) |
+| D-13 | Website visual language taken from the product; static, self-hosted, no third parties |
+| D-14 | Precision before recall; never a confident wrong anchor |
+| D-15 | Exit codes 0 to 4 as in §7 |
+| D-16 | Threat model and mitigations in §10 are requirements, not aspirations |
+| D-17 | Performance budgets in §11 are CI-enforced |

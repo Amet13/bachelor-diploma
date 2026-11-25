@@ -1,6 +1,6 @@
 // proofback site: interactive PDF-to-source demo. No dependencies.
 (() => {
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   // chapters/method.tex, starting at line 38
   const SRC = [
@@ -100,26 +100,35 @@
     dot.setAttribute('cx', x2); dot.setAttribute('cy', y2);
   }
 
-  function select(id, fromUser) {
+  function select(id) {
     current = id;
-    marks.forEach((m) => m.classList.toggle('on', +m.dataset.id === id));
+    marks.forEach((m) => m.setAttribute('aria-pressed', String(+m.dataset.id === id)));
     notes.forEach((n) => n.classList.toggle('on', +n.dataset.for === id));
     render(id);
     requestAnimationFrame(drawThread);
   }
 
-  marks.forEach((m) => m.addEventListener('click', () => select(+m.dataset.id, true)));
-  addEventListener('resize', () => requestAnimationFrame(drawThread));
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawThread);
+  marks.forEach((m) => m.addEventListener('click', () => select(+m.dataset.id)));
 
-  select(1, false);
+  // Redraw the link line whenever layout changes (resize, font load, theme).
+  let queued = false;
+  const redraw = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; drawThread(); }); };
+  if ('ResizeObserver' in window && desk) new ResizeObserver(redraw).observe(desk);
+  else addEventListener('resize', redraw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
 
-  // theme toggle
+  select(1);
+
+  // Theme toggle: explicit choice overrides the system setting and is remembered.
   const btn = document.querySelector('.theme');
+  const root = document.documentElement;
+  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const syncBtn = () => btn && btn.setAttribute('aria-pressed', String(isDark()));
+  syncBtn();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncBtn);
   btn && btn.addEventListener('click', () => {
-    const root = document.documentElement;
-    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-    root.dataset.theme = dark ? 'light' : 'dark';
-    try { localStorage.setItem('pb-theme', root.dataset.theme); } catch (e) {}
+    root.dataset.theme = isDark() ? 'light' : 'dark';
+    try { localStorage.setItem('pb-theme', root.dataset.theme); } catch (e) { /* storage unavailable */ }
+    syncBtn();
   });
 })();

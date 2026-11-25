@@ -1,11 +1,14 @@
 /* proofback site
    Palette comes from the PDF-review world:
    viewer-grey canvas, white page, highlighter yellow (marks, primary action),
-   strike-out red (deletions only), mapping blue (anything proofback links). */
+   strike-out red (deletions only), mapping blue (anything proofback links).
+   Fonts are self-hosted (SIL OFL 1.1, licences in fonts/). */
 
-@font-face { font-family: "CMU Serif"; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-500-roman.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "CMU Serif"; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-500-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "CMU Serif"; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-700-roman.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Schibsted Grotesk"; src: url("fonts/schibsted-grotesk.woff2") format("woff2"); font-weight: 400 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 100 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url("fonts/libertinus-serif-regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url("fonts/libertinus-serif-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url("fonts/libertinus-serif-bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
 :root {
   --canvas: #dfe2e6;
@@ -25,7 +28,7 @@
   --editor-muted: #858c97;
   --ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
-  --tex: "CMU Serif", "Latin Modern Roman", "Computer Modern", Georgia, serif;
+  --tex: "Libertinus Serif", "Linux Libertine O", Georgia, serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -80,7 +83,7 @@ h1 { font-size: clamp(42px, 6.4vw, 86px); line-height: .98; letter-spacing: -.04
 .pane-src .bar-dim { color: #8fd19e; }
 .pane-src .bar-dim.line { color: #f0c56a; }
 .canvas { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 14px; padding: 24px 16px 28px 22px; }
-.page { background: var(--paper); color: #111; box-shadow: 0 1px 3px rgba(0,0,0,.2); padding: 34px 34px 24px; font: 16px/1.6 var(--tex); text-align: justify; hyphens: auto; }
+.page { --blue: #1d5bd6; --red: #e0262f; background: var(--paper); color: #111; box-shadow: 0 1px 3px rgba(0,0,0,.2); padding: 34px 34px 24px; font: 16px/1.6 var(--tex); text-align: justify; hyphens: auto; }
 .page p { margin: 0 0 10px; text-indent: 1.5em; }
 .page-h { font: 700 18px/1.3 var(--tex); margin: 0 0 12px; text-align: left; }
 .page-h span { margin-right: .8em; }
@@ -95,7 +98,7 @@ h1 { font-size: clamp(42px, 6.4vw, 86px); line-height: .98; letter-spacing: -.04
 .mk-note { background: color-mix(in srgb, var(--yellow) 35%, transparent); border-bottom: 2px solid var(--yellow-edge); }
 .mk-caret { display: inline-block; width: 12px; height: 14px; position: relative; top: 5px; margin-left: 1px; }
 .mk-caret::before { content: ""; position: absolute; left: 1px; top: 2px; width: 7px; height: 7px; border-left: 2px solid var(--blue); border-top: 2px solid var(--blue); transform: rotate(45deg); }
-.mk:hover, .mk.on { outline: 1.5px solid var(--blue); outline-offset: 2px; }
+.mk:hover, .mk[aria-pressed="true"] { outline: 1.5px solid var(--blue); outline-offset: 2px; }
 .nw { white-space: nowrap; }
 
 .popups { display: flex; flex-direction: column; gap: 12px; padding-top: 52px; }
@@ -123,7 +126,7 @@ h1 { font-size: clamp(42px, 6.4vw, 86px); line-height: .98; letter-spacing: -.04
 .item .body { font: 500 15px/1.4 var(--ui); color: var(--editor-ink); margin: 8px 0; }
 .item .diff { margin: 0; white-space: pre-wrap; }
 .item .dm { color: #ff8a8f; } .item .dp { color: #8fd19e; } .item .dn { color: var(--editor-muted); }
-.viewer-hint { grid-column: 1 / -1; font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+.viewer-hint { max-width: 1200px; margin: 0 auto; padding: 0 24px 10px; font-size: 14px; color: var(--muted); }
 
 /* sections */
 main > section:not(.intro):not(.viewer) { max-width: 1200px; margin: 0 auto; padding: 88px 24px 0; }
@@ -172,7 +175,7 @@ h2 { font-size: clamp(28px, 3.4vw, 40px); letter-spacing: -.035em; line-height: 
 }
 @media (max-width: 640px) {
   body { font-size: 16px; }
-  .top, .intro, .viewer, main > section:not(.intro):not(.viewer), .foot { padding-left: 16px; padding-right: 16px; }
+  .top, .intro, .viewer, .viewer-hint, main > section:not(.intro):not(.viewer), .foot { padding-left: 16px; padding-right: 16px; }
   .top nav a:not([href^="https"]) { display: none; }
   .canvas { grid-template-columns: 1fr; padding: 14px; }
   .popups { display: none; }
@@ -188,3 +191,5 @@ h2 { font-size: clamp(28px, 3.4vw, 40px); letter-spacing: -.035em; line-height: 
   .road { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media print { .top nav, .viewer, .viewer-hint, .thread { display: none; } body { background: #fff; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
