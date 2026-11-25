@@ -2392,7 +2392,6 @@ dependencies = [
  "proofback-pdf",
  "proofback-synctex",
  "proofback-tex",
- "thiserror",
 ]
 
 [[package]]
@@ -2414,7 +2413,6 @@ dependencies = [
  "proofback-typst",
  "ratatui",
  "rlimit",
- "serde",
  "serde_json",
  "tempfile",
 ]
@@ -2432,7 +2430,6 @@ dependencies = [
  "proofback-synctex",
  "proofback-tex",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -2443,7 +2440,6 @@ dependencies = [
  "proofback-model",
  "proofback-tex",
  "quick-xml 0.42.0",
- "serde_json",
  "thiserror",
  "zip",
 ]
@@ -2509,9 +2505,7 @@ version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-model",
- "proofback-tex",
  "serde",
- "serde_json",
  "sha2 0.11.1",
  "similar",
  "tempfile",

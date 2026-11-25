@@ -12,3 +12,4 @@ npm/node_modules/
 integrations/vscode/out/
 integrations/vscode/node_modules/
 integrations/vscode/*.vsix
+__pycache__/
