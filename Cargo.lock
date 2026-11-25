@@ -769,6 +769,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofback-anchor"
+version = "0.0.0"
+dependencies = [
+ "proofback-model",
+ "proofback-pdf",
+ "proofback-synctex",
+ "proofback-tex",
+ "thiserror",
+]
+
+[[package]]
 name = "proofback-cli"
 version = "0.0.0"
 dependencies = [
@@ -777,6 +788,20 @@ dependencies = [
  "proofback-model",
  "proofback-synctex",
  "proofback-tex",
+ "serde_json",
+]
+
+[[package]]
+name = "proofback-corpus"
+version = "0.0.0"
+dependencies = [
+ "pdfium-render",
+ "proofback-anchor",
+ "proofback-model",
+ "proofback-pdf",
+ "proofback-synctex",
+ "proofback-tex",
+ "serde",
  "serde_json",
 ]
 
@@ -797,6 +822,7 @@ version = "0.0.0"
 dependencies = [
  "lopdf",
  "pdfium-render",
+ "serde",
  "thiserror",
 ]
 
@@ -813,7 +839,6 @@ name = "proofback-tex"
 version = "0.0.0"
 dependencies = [
  "proptest",
- "thiserror",
  "unicode-normalization",
 ]
 

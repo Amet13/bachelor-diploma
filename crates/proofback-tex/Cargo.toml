@@ -9,7 +9,6 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-thiserror = "2.0.21"
 unicode-normalization = "0.1.26"
 
 [lints]
