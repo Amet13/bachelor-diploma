@@ -1,14 +1,19 @@
 # proofback
 
-> proofback brings reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, sticky notes; later email notes and Word tracked changes) back to the exact file, line and character range of the LaTeX source, tracks each item's status and replies across drafts in `.proofback/` inside the author's repo, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native + WebAssembly); AI agents use it through an MCP server. Status: in design, nothing released yet.
+> proofback maps reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, notes; later email notes and Word tracked changes) to the exact file, line and character range of the LaTeX source. It tracks each item's status and replies across drafts in `.proofback/` inside the author's repository, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native and WebAssembly). AI agents use it through an MCP server; reviewer text is returned as untrusted data. Status: plan final, implementation not started, nothing to install yet.
 
 ## Docs
-- [Project plan](https://github.com/Amet13/proofback/blob/main/docs/PLAN.md): scope, architecture, data model, matching pipeline, roadmap, decision log
+
+- [Project plan](https://github.com/Amet13/proofback/blob/main/docs/PLAN.md): scope, architecture, matching pipeline, data model, command reference, security, performance, roadmap, decision log
 - [README](https://github.com/Amet13/proofback/blob/main/README.md)
+- [Security policy](https://github.com/Amet13/proofback/blob/main/SECURITY.md)
 
 ## Planned interfaces
-- CLI: `proofback import|list|show|resolve|patch|apply|sync|answer|letter|mcp`, `--json` on every command
-- MCP tools: list_items, get_item, propose_patch, apply_patch, resolve_item, sync, export
+
+- CLI: `proofback init|import|list|show|triage|resolve|patch|apply|sync|answer|letter|inline|sarif|stats|mcp|doctor`, `--json` on every command, exit codes 0 to 4
+- MCP tools (stdio): list_items, get_item, propose_patch, apply_patch, resolve_item, sync, export
+- Item IDs: `pb_` plus base32, unique prefixes accepted
 
 ## Related
-- [overfull](https://github.com/Amet13/overfull): pre-submission checks for LaTeX papers (a different tool; proofback starts after review)
+
+- [overfull](https://github.com/Amet13/overfull): pre-submission checks for LaTeX papers. A different tool; proofback starts after review.
