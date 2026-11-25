@@ -684,7 +684,7 @@ mod tests {
     fn forward_finds_records() {
         let s = sample();
         assert_eq!(s.forward(3, 5).len(), 2);
-        assert!(s.forward(3, 99).is_empty());
+        assert_eq!(s.forward(3, 99).len(), 0);
     }
 
     #[test]
