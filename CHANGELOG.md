@@ -3,7 +3,7 @@
 All notable changes to proofback. Versions follow [Semantic Versioning](https://semver.org/);
 the JSON schema is versioned separately (`schema_version` in round files).
 
-## Unreleased
+## 0.2.0 (2026-11-25)
 
 ### Website and app
 
@@ -12,6 +12,9 @@ the JSON schema is versioned separately (`schema_version` in round files).
 - Landing page: plain section headings, an install section, and no filler (captions,
   revision table, colophon).
 - Browser app: consistent buttons, aligned header, and the setup form keeps its width.
+- Browser app: each deploy now gets its own offline cache. Before, a returning visitor
+  could keep an old version of the app indefinitely.
+- New social preview image matching the current site.
 
 ### Releases
 
