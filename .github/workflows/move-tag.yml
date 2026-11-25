@@ -1,0 +1,49 @@
+name: Move tag
+
+# Points an existing release tag at another commit, for example after a history
+# rewrite. Refuses unless the new commit's files are identical to the tagged
+# commit's (same tree), so a release can never silently change content. The
+# GitHub Release and its files stay attached to the tag name.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to move, e.g. v0.2.0
+        required: true
+      commit:
+        description: Full commit SHA the tag should point to
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check and move
+        env:
+          TAG: ${{ inputs.tag }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          case "$TAG" in v[0-9]*) ;; *) echo "::error::$TAG is not a release tag"; exit 1 ;; esac
+          git rev-parse -q --verify "refs/tags/$TAG" > /dev/null || { echo "::error::tag $TAG does not exist"; exit 1; }
+          old_tree="$(git rev-parse "refs/tags/$TAG^{tree}")"
+          new_tree="$(git rev-parse "$COMMIT^{tree}")"
+          echo "current: $(git rev-parse "refs/tags/$TAG^{commit}") tree $old_tree"
+          echo "new:     $COMMIT tree $new_tree"
+          if [ "$old_tree" != "$new_tree" ]; then
+            echo "::error::the files at $COMMIT differ from $TAG; refusing to move the tag"
+            exit 1
+          fi
+          git merge-base --is-ancestor "$COMMIT" "origin/${{ github.event.repository.default_branch }}" || {
+            echo "::error::$COMMIT is not on the default branch"; exit 1; }
+          git push --force origin "$COMMIT:refs/tags/$TAG"
+          echo "::notice::$TAG now points to $COMMIT (same files as before)"

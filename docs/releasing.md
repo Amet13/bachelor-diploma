@@ -68,3 +68,11 @@ its name at run time, so renaming the branch does not break releases. The workfl
 pushes the "Release" commit there with the built-in token. If a branch protection
 rule blocks that, allow GitHub Actions to bypass it, or release by merging a version
 bump instead.
+
+## Moving a release tag
+
+If history is ever rewritten (for example to drop files committed by mistake), a
+release tag can be pointed at the rewritten copy of its commit: **Actions, Move tag,
+Run workflow** with the tag and the new commit SHA. The workflow refuses unless the new
+commit has exactly the same files as the tagged one and is on the default branch; the
+GitHub Release and its files stay attached.
