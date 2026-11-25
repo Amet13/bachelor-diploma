@@ -7,18 +7,18 @@ Releases are automatic; nobody clones, tags or builds by hand.
 
 From the GitHub website:
 
-1. Make sure `CHANGELOG.md` on `master` describes the changes under `## Unreleased`
+1. Make sure `CHANGELOG.md` on `main` describes the changes under `## Unreleased`
    (contributors add a line there with each pull request).
-2. Open **Actions, Release, Run workflow** on `master` and set **bump** to `patch`,
+2. Open **Actions, Release, Run workflow** on `main` and set **bump** to `patch`,
    `minor`, `major` or an exact version such as `1.0.0`.
 
 The workflow then sets the version in every manifest and `Cargo.lock`, turns
 `## Unreleased` into `## 1.0.0 (date)` (leaving a fresh `## Unreleased` above it),
-commits that to `master` as "Release 1.0.0", builds everything, tags `v1.0.0` and
+commits that to `main` as "Release 1.0.0", builds everything, tags `v1.0.0` and
 publishes the GitHub Release with that changelog section as its notes.
 
 Merging a pull request that changes the version (for example one made with
-`cargo xtask bump minor`) releases it the same way: on every push to `master` the
+`cargo xtask bump minor`) releases it the same way: on every push to `main` the
 workflow checks whether the version in `Cargo.toml` has been released, and releases
 it if not. Pushes that leave the version alone build nothing.
 
@@ -63,6 +63,8 @@ file and runs the checks but publishes nothing.
 
 ## Requirements
 
-The workflow pushes the "Release" commit to `master` with the built-in token. If a
-branch protection rule blocks pushes to `master`, allow GitHub Actions to bypass it,
-or release by merging a version bump instead.
+Releases come from the repository's default branch (`main`); the workflow reads
+its name at run time, so renaming the branch does not break releases. The workflow
+pushes the "Release" commit there with the built-in token. If a branch protection
+rule blocks that, allow GitHub Actions to bypass it, or release by merging a version
+bump instead.
