@@ -7,7 +7,7 @@ use pdfium_render::prelude::*;
 use crate::Error;
 
 /// One character with its loose bounding box `[left, bottom, right, top]`.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TextChar {
     pub c: char,
     pub bbox: [f32; 4],
@@ -23,7 +23,7 @@ impl TextChar {
 }
 
 /// All characters of a page in reading order, as PDFium produced them.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PageText {
     /// 1-based page number.
     pub page: u32,
@@ -139,7 +139,7 @@ impl<'a> TextExtractor<'a> {
 }
 
 /// The text under a markup annotation, with context.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct MarkedText {
     pub text: String,
     pub prefix: String,

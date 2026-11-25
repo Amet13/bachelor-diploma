@@ -36,3 +36,36 @@ pub enum Error {
     #[error("could not write the PDF: {0}")]
     Write(String),
 }
+
+/// Everything proofback needs from a review PDF.
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Extracted {
+    pub boxes: Vec<PageBox>,
+    pub annotations: Vec<PdfAnnotation>,
+    /// Text of every page that carries at least one annotation.
+    pub texts: Vec<PageText>,
+}
+
+/// Read annotations and the text of annotated pages.
+pub fn extract(
+    pdfium: &pdfium_render::prelude::Pdfium,
+    bytes: &[u8],
+    limits: Limits,
+) -> Result<Extracted, Error> {
+    let (boxes, annotations) = read_annotations(bytes, limits)?;
+    let mut pages: Vec<u32> = annotations.iter().map(|a| a.page).collect();
+    pages.sort_unstable();
+    pages.dedup();
+    let mut texts = Vec::with_capacity(pages.len());
+    if !pages.is_empty() {
+        let ex = TextExtractor::open(pdfium, bytes)?;
+        for p in pages {
+            texts.push(ex.page(p)?);
+        }
+    }
+    Ok(Extracted {
+        boxes,
+        annotations,
+        texts,
+    })
+}

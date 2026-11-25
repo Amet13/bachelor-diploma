@@ -25,7 +25,7 @@ impl Default for Limits {
 }
 
 /// A page's media box `[x0, y0, x1, y1]`.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PageBox {
     /// 1-based page number.
     pub page: u32,
@@ -53,7 +53,7 @@ impl PageBox {
 }
 
 /// An annotation as found in the PDF.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PdfAnnotation {
     /// 1-based page number.
     pub page: u32,
