@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9WgQksU5DcRXJDse1/0sfOL+8zejqK6PQ36P6O8t6g8='; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
+  <title>proofback</title>
+  <meta name="description" content="proofback maps every highlight, strike-out and note on a reviewed PDF to the exact line of your LaTeX source, tracks what you did about it, and sends the answers back.">
+  <meta name="theme-color" content="#dfe2e6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="proofback">
+  <meta property="og:description" content="Reviewer marks on a PDF, mapped to the exact line of your LaTeX source.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://amet13.github.io/proofback/">
+  <meta property="og:image" content="https://amet13.github.io/proofback/og.png">
+  <meta property="og:image:alt" content="A PDF page with reviewer marks next to the LaTeX source they map to">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://amet13.github.io/proofback/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+  <link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script>try{var t=localStorage.getItem("pb-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <a class="brand" href="./">proofback</a>
+    <nav aria-label="Primary">
+      <a href="#how"><span class="sn">1</span>Method</a>
+      <a href="#inputs"><span class="sn">2</span>Inputs</a>
+      <a href="#agents"><span class="sn">3</span>Agents</a>
+      <a href="#accuracy"><span class="sn">4</span>Results</a>
+      <a href="#roadmap"><span class="sn">5</span>Revisions</a>
+      <a href="https://github.com/Amet13/proofback">GitHub</a>
+      <button class="theme" type="button" aria-label="Dark theme" aria-pressed="false" title="Toggle dark theme">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3a7 7 0 0 1 0 14Z" fill="currentColor"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="intro" aria-labelledby="title">
+      <div class="intro-main">
+        <h1 id="title"><span class="h-mark">Every</span> margin note, back in your source.</h1>
+        <aside class="h-note" aria-label="Reviewer note on the headline">
+          <p class="h-q"><b>Prof. Hale</b> “Every”? Prove it.</p>
+          <p class="h-a"><b>Reply</b> Every one it can place. When it can’t be sure, it says “page only” and leaves it to you. Numbers in §4.</p>
+        </aside>
+      </div>
+      <div class="intro-side">
+        <p>Your supervisor sent back the PDF with forty-seven marks on chapter 3. proofback reads them and tells you, for each one, the file, line and characters in your LaTeX it refers to. Then it keeps a record of what you changed, what you won’t change and why, and writes the replies back into the reviewer’s own PDF.</p>
+        <p class="actions">
+          <a class="btn" href="app/">Try it on your PDF</a>
+          <a class="textlink" href="https://github.com/Amet13/proofback#install">Install the CLI</a>
+        </p>
+        <p class="status">v0.1.0, open source. The browser version runs on your computer; your thesis never leaves it.</p>
+      </div>
+    </section>
+
+    <p class="viewer-hint" id="demo-hint">Fig. 1. Click a mark on the page to see where it lands in the source.</p>
+    <!-- Demo: a PDF viewer and an editor, side by side -->
+    <section class="viewer" id="desk" aria-label="Interactive demo" aria-describedby="demo-hint">
+      <div class="pane pane-pdf">
+        <div class="bar"><span>review-ch3.pdf</span><span class="bar-dim">page 14 of 212</span></div>
+        <div class="canvas">
+          <article class="page">
+            <h2 class="page-h"><span>3.2</span> Estimating the threshold</h2>
+            <p>
+              The estimator is
+              <button type="button" class="mk mk-strike" data-id="1" aria-pressed="false">strong</button><sup>1</sup>
+              under heavy-tailed noise, which makes it
+              <button type="button" class="mk mk-hl" data-id="2" aria-pressed="false">suitable for sensor data</button><sup>2</sup>
+              collected in the field. We therefore fix the threshold at
+              <button type="button" class="mk mk-note" data-id="3" aria-pressed="false"><i>τ</i> = 0.35</button><sup>3</sup>.
+              <button type="button" class="mk mk-strike" data-id="4" aria-pressed="false">Earlier experiments with a fixed window were inconclusive and are omitted here.</button><sup>4</sup>
+              Results for the full dataset are given in <span class="nw">Table 3.1<button type="button" class="mk mk-caret" data-id="5" aria-pressed="false"><span class="sr">insert here</span></button><sup>5</sup>.</span>
+            </p>
+            <p class="page-dim">The sensitivity of the procedure to the choice of window length is examined in Section 3.4, where we compare three alternatives against the baseline described above.</p>
+            <div class="pageno">14</div>
+          </article>
+          <div class="popups" aria-hidden="true">
+            <div class="pop" data-for="1"><b>Prof. Hale</b><span>Replace with “robust”</span></div>
+            <div class="pop" data-for="2"><b>Prof. Hale</b><span>Cite the field study here</span></div>
+            <div class="pop" data-for="3"><b>Prof. Hale</b><span>Why this threshold?</span></div>
+            <div class="pop" data-for="5"><b>Prof. Hale</b><span>Insert “and Fig. 3.2”</span></div>
+          </div>
+        </div>
+      </div>
+
+      <svg class="thread" id="thread" aria-hidden="true"><path id="thread-path" d=""/><circle id="thread-dot" r="3.5"/></svg>
+
+      <div class="pane pane-src">
+        <div class="bar"><span>chapters/method.tex</span><span class="bar-dim" id="badge">exact</span></div>
+        <ol class="code" id="code"></ol>
+        <div class="item" id="item" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="how" id="how" aria-labelledby="how-title">
+      <h2 id="how-title"><span class="sn">1</span>Method</h2>
+      <p class="lead">Four commands cover a review round. Each one also takes <code>--json</code>, so a script or an agent can drive it.</p>
+      <dl class="steps">
+        <div>
+          <dt><code>proofback import review-ch3.pdf</code></dt>
+          <dd>Reads every annotation in the file. Acrobat, Preview, Zotero, Okular and tablet apps all store them a little differently; proofback knows the differences.</dd>
+        </div>
+        <div>
+          <dt><code>proofback list</code></dt>
+          <dd>SyncTeX, the file LaTeX writes next to your PDF, narrows each mark down to a few source lines. An aligner that understands <code>\ref</code>, macros, ligatures and hyphenation then finds the characters. Every item carries its confidence: exact, line, region or page.</dd>
+        </div>
+        <div>
+          <dt><code>proofback patch</code>, <code>resolve</code></dt>
+          <dd>“Replace with robust” becomes a diff you read before applying. A question gets a reply. A suggestion you disagree with gets a reason. It is all saved in <code>.proofback/</code> next to your sources, so it goes into git with them and follows your edits into the next draft.</dd>
+        </div>
+        <div>
+          <dt><code>proofback answer</code>, <code>letter</code></dt>
+          <dd>The reviewer gets their own PDF back with your reply under each of their notes. Journals get a response letter built from the same record.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="inputs" id="inputs" aria-labelledby="inputs-title">
+      <h2 id="inputs-title"><span class="sn">2</span>Inputs</h2>
+      <p class="lead">Nobody has to install anything or make an account to review your work. They keep doing what they already do.</p>
+      <table class="tbl">
+        <thead><tr><th scope="col">The reviewer sends</th><th scope="col">Command</th><th scope="col">What happens</th></tr></thead>
+        <tbody>
+          <tr><td>An annotated PDF</td><td>import review.pdf</td><td>Highlights, underlines, strike-outs, carets, sticky notes, free text and ink. Reply threads and author names are kept.</td></tr>
+          <tr><td>An email with page numbers</td><td>import notes.txt</td><td>Lines like “p. 12, para 2: unclear” are located in the source. You confirm each one before it counts.</td></tr>
+          <tr><td>A Word file</td><td>docx export</td><td>Send a DOCX with hidden source markers. Their tracked changes and comments map back to the exact lines.</td></tr>
+          <tr><td>A PDF of a Typst document</td><td>import paper.pdf</td><td>Same as LaTeX, through the Typst compiler built into proofback.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="agents" id="agents" aria-labelledby="agents-title">
+      <div>
+        <h2 id="agents-title"><span class="sn">3</span>Agents</h2>
+        <p>If you work with Claude Code, Cursor or another coding agent, <code>proofback mcp</code> gives it the items with their source ranges. It can propose a patch and draft a reply. You still decide.</p>
+        <p>Two rules are enforced in the tool, not left to the prompt. An edit can’t be marked done unless the text it points at has actually changed. A comment can’t be marked done without a reply. Reviewer text reaches the agent labelled as untrusted, so a note that says “ignore your instructions” is just a note.</p>
+        <p>proofback itself makes no network calls. The optional <code>suggest</code> command is off until you turn it on and shows exactly what it would send.</p>
+      </div>
+      <figure class="term" aria-label="Example agent session">
+        <figcaption>Fig. 2. An agent working through chapter 3 over MCP</figcaption>
+<pre><span class="u">&gt;</span> work through the open proofback items in chapter 3
+
+<span class="a">list_items</span>     <span class="d">status=open file=chapters/*</span>
+               <span class="d">5 items: 4 exact, 1 line</span>
+<span class="a">get_item</span>       <span class="d">pb_7k2m9q context_lines=20</span>
+<span class="a">propose_patch</span>  <span class="d">pb_7k2m9q</span>
+  <span class="m">- The estimator is strong under</span>
+  <span class="p">+ The estimator is robust under</span>
+               <span class="p">applies, touches the anchored text</span>
+<span class="a">resolve_item</span>   <span class="d">pb_3xq1fd discuss</span>
+               <span class="d">"Chosen by 5-fold CV. Add a line to 3.4?"</span>
+
+3 fixed, 1 needs your decision, 1 figure left for you.</pre>
+      </figure>
+    </section>
+
+    <section class="accuracy" id="accuracy" aria-labelledby="acc-title">
+      <h2 id="acc-title"><span class="sn">4</span>Results</h2>
+      <p class="lead">We generate theses and papers, annotate them the way real PDF apps do, and check where every mark lands. This runs on every pull request. If wrong placements go above 1% or exact matches drop below 90%, the change doesn’t merge.</p>
+      <table class="tbl tbl-num">
+        <caption>Table 1. 256 annotations on three LaTeX documents.</caption>
+        <thead><tr><th scope="col">Where the mark landed</th><th scope="col">With SyncTeX</th><th scope="col">PDF only</th></tr></thead>
+        <tbody>
+          <tr><td>Exact characters</td><td>97.8%</td><td>43.3%</td></tr>
+          <tr><td>Right line</td><td>99.6%</td><td>95.3%</td></tr>
+          <tr><td>Wrong place</td><td>0.4%</td><td>0%</td></tr>
+          <tr><td>Page only, left to you</td><td>0%</td><td>4.7%</td></tr>
+        </tbody>
+      </table>
+      <p class="fn">Word round trips and Typst documents land on the exact characters in all 60 and 120 test cases. A 322-page thesis with 500 notes imports in about 0.3 seconds in the same test run.</p>
+    </section>
+
+    <section class="roadmap" id="roadmap" aria-labelledby="road-title">
+      <h2 id="road-title"><span class="sn">5</span>Revisions</h2>
+      <table class="tbl rev">
+        <thead><tr><th scope="col">Rev.</th><th scope="col">Change</th><th scope="col">State</th></tr></thead>
+        <tbody>
+          <tr><td>0.1</td><td>PDF import, matching, <code>list</code>, <code>show</code>, <code>doctor</code></td><td>done</td></tr>
+          <tr><td>0.2</td><td>Triage, resolve, patch, sync, answered PDF, response letter</td><td>done</td></tr>
+          <tr><td>0.3</td><td>MCP server, agent instructions, GitHub Action</td><td>done</td></tr>
+          <tr><td>0.4</td><td>Browser app, npm package</td><td>done</td></tr>
+          <tr><td>0.5</td><td>Notes from email, optional AI suggestions</td><td>done</td></tr>
+          <tr><td>0.6</td><td>Word round trip</td><td>done</td></tr>
+          <tr><td>0.7, 0.8</td><td>VS Code extension, Typst</td><td>done</td></tr>
+          <tr><td>1.0</td><td>First tagged release, frozen JSON schema, public accuracy report</td><td class="next">next</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><b>Colophon.</b> Set in Schibsted Grotesk, Libertinus Serif and JetBrains Mono, served from this site. No cookies, no analytics, no requests to anyone else. Code under MIT or Apache-2.0. <a href="https://github.com/Amet13/proofback">Source</a> · <a href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Design notes</a> · <a href="llms.txt">llms.txt</a></p>
+    <p>Still writing and want to catch problems before anyone reads it? That is <a href="https://github.com/Amet13/overfull">overfull</a>. proofback is for afterwards.</p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

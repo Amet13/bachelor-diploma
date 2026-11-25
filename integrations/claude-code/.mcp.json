@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "proofback": {
+      "command": "proofback",
+      "args": ["mcp"]
+    }
+  }
+}

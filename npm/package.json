@@ -1,0 +1,16 @@
+{
+  "name": "proofback",
+  "version": "0.1.0",
+  "description": "Map reviewer feedback on a PDF to the exact line of your LaTeX source. WebAssembly build for Node.",
+  "license": "MIT OR Apache-2.0",
+  "homepage": "https://amet13.github.io/proofback/",
+  "repository": { "type": "git", "url": "git+https://github.com/Amet13/proofback.git", "directory": "npm" },
+  "keywords": ["latex", "review", "pdf", "thesis", "synctex", "annotations"],
+  "type": "commonjs",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": { "proofback": "bin/proofback.js" },
+  "files": ["lib/", "bin/", "engine/", "README.md"],
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "node --test test/*.test.js" }
+}

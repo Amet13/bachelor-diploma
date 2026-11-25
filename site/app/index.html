@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' blob: data:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <title>proofback app</title>
+  <meta name="description" content="Import an annotated PDF and see each reviewer note on the exact line of your LaTeX source. Runs locally in your browser.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="../fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="app">
+  <header class="top">
+    <a class="brand" href="../">proofback</a>
+    <nav aria-label="App">
+      <span class="local-note">Everything stays on this computer.</span>
+      <a href="https://github.com/Amet13/proofback">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section id="setup" class="setup" aria-labelledby="setup-title">
+      <h1 id="setup-title">Open a review</h1>
+      <p class="hint intro-hint">Three files, all read here in the browser. Nothing is sent anywhere, so this works offline too.</p>
+      <ol class="steps-form">
+        <li>
+          <label for="pdf-input">Annotated PDF</label>
+          <p class="hint">The PDF with your reviewer’s marks on it, from whatever app they used.</p>
+          <input id="pdf-input" type="file" accept="application/pdf,.pdf">
+        </li>
+        <li>
+          <label for="synctex-input">SyncTeX file <span class="opt">optional, recommended</span></label>
+          <p class="hint"><code>main.synctex.gz</code> from the build the reviewer read. LaTeX writes it next to the PDF when SyncTeX is on. Without it, more marks land on the right line rather than the exact words.</p>
+          <input id="synctex-input" type="file" accept=".gz,.synctex">
+        </li>
+        <li>
+          <label for="dir-input">LaTeX sources</label>
+          <p class="hint">The project folder, or the source <code>.zip</code> you can download from Overleaf. If the zip also holds the PDF and SyncTeX file, you can skip the first two.</p>
+          <div class="pick">
+            <input id="dir-input" type="file" webkitdirectory multiple aria-label="Project folder">
+            <span>or</span>
+            <input id="zip-input" type="file" accept=".zip,application/zip" aria-label="Project zip">
+          </div>
+        </li>
+      </ol>
+      <div class="setup-actions">
+        <label class="check"><input id="anon" type="checkbox"> Replace reviewer names with “Reviewer 1”, “Reviewer 2”</label>
+        <button id="import-btn" class="btn" type="button" disabled>Match the marks</button>
+        <p id="setup-status" class="status-line" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="review" class="review" hidden aria-label="Review">
+      <div class="toolbar">
+        <div>
+          <strong id="round-name"></strong>
+          <span id="round-counts" class="muted"></span>
+        </div>
+        <div class="exports" role="group" aria-label="Export">
+          <button type="button" data-export="round">Round file</button>
+          <button type="button" data-export="patch">Patch</button>
+          <button type="button" data-export="markdown">Checklist</button>
+          <button type="button" data-export="letter_markdown">Letter (Markdown)</button>
+          <button type="button" data-export="letter_latex">Letter (LaTeX)</button>
+          <button type="button" data-export="answer">Answered PDF</button>
+        </div>
+      </div>
+      <div class="panes">
+        <section class="pane pane-page" aria-label="PDF page">
+          <div class="bar"><span id="page-label">page</span><span class="bar-dim">reviewer's PDF</span></div>
+          <div class="page-wrap"><div id="page-stage" class="page-stage"><canvas id="page-canvas"></canvas></div></div>
+        </section>
+        <section class="pane pane-list" aria-label="Items">
+          <div class="bar"><span>Items</span><span class="bar-dim">j / k to move</span></div>
+          <ol id="item-list" class="item-list" tabindex="0"></ol>
+        </section>
+        <section class="pane pane-src" aria-label="Source and decision">
+          <div class="bar"><span id="src-file">source</span><span id="src-conf" class="bar-dim"></span></div>
+          <div id="detail" class="detail"></div>
+          <ol id="src-lines" class="code"></ol>
+          <div class="decide">
+            <div class="decide-buttons" role="group" aria-label="Decision">
+              <button type="button" data-status="done" title="d">Done</button>
+              <button type="button" data-status="wontfix" title="w">Won't fix</button>
+              <button type="button" data-status="discuss" title="x">Discuss</button>
+              <button type="button" data-status="open" title="o">Reopen</button>
+            </div>
+            <label for="reply" class="sr">Reply to the reviewer</label>
+            <textarea id="reply" rows="2" placeholder="Reply to the reviewer (r)"></textarea>
+            <button id="reply-btn" type="button">Save reply</button>
+            <p id="decide-status" class="status-line" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
