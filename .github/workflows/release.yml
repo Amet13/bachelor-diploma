@@ -16,9 +16,9 @@ name: Release
 
 on:
   push:
-    # Only the repository's default branch publishes (checked below), so a
-    # rename between these two cannot stop releases.
-    branches: [main, master]
+    # Publishing is further limited to the repository's default branch, which
+    # the prepare job reads at run time.
+    branches: [main]
   workflow_dispatch:
     inputs:
       bump:
