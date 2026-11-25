@@ -1,6 +1,8 @@
 //! Positioned page text from PDFium.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::PathBuf;
 
 use pdfium_render::prelude::*;
 
@@ -38,6 +40,19 @@ impl PageText {
 
 /// Bind PDFium. Looks at `hint`, then `PROOFBACK_PDFIUM`, then next to the running
 /// executable, then the workspace's `target/pdfium`, then the system library path.
+#[cfg(target_arch = "wasm32")]
+pub fn load_pdfium(_hint: Option<&Path>) -> Result<Pdfium, Error> {
+    // In the browser, JavaScript loads PDFium's WebAssembly build and hands it to
+    // pdfium-render with `initialize_pdfium_render` before this is called.
+    Pdfium::bind_to_system_library()
+        .map(Pdfium::new)
+        .map_err(|e| {
+            Error::PdfiumMissing(format!("PDFium WebAssembly module not initialised: {e}"))
+        })
+}
+
+/// Bind PDFium (native targets).
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_pdfium(hint: Option<&Path>) -> Result<Pdfium, Error> {
     let mut tried = Vec::new();
     let mut candidates: Vec<PathBuf> = Vec::new();

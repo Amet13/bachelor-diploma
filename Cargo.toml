@@ -40,3 +40,11 @@ strip = true
 
 [profile.dev.package."*"]
 opt-level = 2
+
+# Size-optimised build for the browser engine (`cargo xtask wasm`).
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+lto = true
+panic = "abort"
+strip = false

@@ -16,3 +16,6 @@ thiserror = "2.0.21"
 
 [lints]
 workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+lopdf = { version = "0.42.0", default-features = false, features = ["wasm_js"] }

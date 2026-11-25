@@ -6,3 +6,6 @@ node_modules/
 *.synctex.gz
 !fixtures/**/*.synctex.gz
 tools/node_modules/
+site/app/engine/
+npm/engine/
+npm/node_modules/

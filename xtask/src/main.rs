@@ -17,9 +17,20 @@ fn main() -> Result<()> {
     match args.first().map(String::as_str) {
         Some("schema") => schema(&root, args.iter().any(|a| a == "--check")),
         Some("fixtures") => fixtures(&root),
-        Some("pdfium") => pdfium(&root, args.iter().position(|a| a == "--platform").and_then(|i| args.get(i + 1)).map(String::as_str)),
+        Some("wasm") => wasm(&root, "site/app/engine", "no-modules"),
+        Some("npm") => wasm(&root, "npm/engine", "nodejs"),
+        Some("sample") => sample(&root),
+        Some("pdfium") => pdfium(
+            &root,
+            args.iter()
+                .position(|a| a == "--platform")
+                .and_then(|i| args.get(i + 1))
+                .map(String::as_str),
+        ),
         _ => {
-            eprintln!("usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...]>");
+            eprintln!(
+                "usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...] | wasm | npm | sample>"
+            );
             std::process::exit(2);
         }
     }
@@ -172,5 +183,159 @@ fn pdfium(root: &Path, platform_override: Option<&str>) -> Result<()> {
         "PDFium {PDFIUM_TAG} ({platform}) ready in {}",
         dest.display()
     );
+    Ok(())
+}
+
+/// PDFium WebAssembly build pinned for the browser app.
+const PDFIUM_WASM_SHA256: &str = "77db4ef8c9ab0ecef2af659fe7d407279a0ebacff4cfcc1b3cc28160be2abfbd";
+/// Must match the `wasm-bindgen` crate version pinned in `crates/proofback-wasm`.
+const WASM_BINDGEN_VERSION: &str = "0.2.130";
+
+fn wasm(root: &Path, out_dir: &str, target: &str) -> Result<()> {
+    use sha2::{Digest, Sha256};
+    let out = root.join(out_dir);
+    std::fs::create_dir_all(&out)?;
+    let status = Command::new("cargo")
+        .args([
+            "build",
+            "--locked",
+            "--profile",
+            "wasm-release",
+            "--target",
+            "wasm32-unknown-unknown",
+            "-p",
+            "proofback-wasm",
+        ])
+        .current_dir(root)
+        .status()?;
+    if !status.success() {
+        bail!("cargo build for wasm32 failed");
+    }
+    let version = Command::new("wasm-bindgen")
+        .arg("--version")
+        .output()
+        .context("wasm-bindgen CLI not found; install version 0.2.130")?;
+    let version = String::from_utf8_lossy(&version.stdout).to_string();
+    if !version.contains(WASM_BINDGEN_VERSION) {
+        bail!("wasm-bindgen CLI {version:?} does not match {WASM_BINDGEN_VERSION}");
+    }
+    let wasm_in = root.join("target/wasm32-unknown-unknown/wasm-release/proofback_wasm.wasm");
+    let status = Command::new("wasm-bindgen")
+        .arg(&wasm_in)
+        .args(["--target", target, "--no-typescript", "--out-dir"])
+        .arg(&out)
+        .status()?;
+    if !status.success() {
+        bail!("wasm-bindgen failed");
+    }
+    if target == "nodejs" {
+        // pdfium-render needs the module's own exports (memory, table) to bridge
+        // into PDFium; wasm-bindgen's Node output does not expose them.
+        let js = out.join("proofback_wasm.js");
+        let mut text = std::fs::read_to_string(&js)?;
+        text.push_str("\nmodule.exports.__wasm = wasm;\n");
+        std::fs::write(&js, text)?;
+    }
+    let bg = out.join("proofback_wasm_bg.wasm");
+    match Command::new("wasm-opt")
+        .args([
+            "-Os",
+            "--enable-bulk-memory",
+            "--enable-nontrapping-float-to-int",
+            "--enable-sign-ext",
+            "--enable-mutable-globals",
+            "-o",
+        ])
+        .arg(&bg)
+        .arg(&bg)
+        .status()
+    {
+        Ok(s) if s.success() => {}
+        _ => eprintln!(
+            "warning: wasm-opt not available or failed; the engine is larger than necessary"
+        ),
+    }
+    // PDFium's WebAssembly build.
+    let archive = root.join("target/pdfium-wasm.tgz");
+    if !archive.exists() {
+        let url = format!(
+            "https://github.com/bblanchon/pdfium-binaries/releases/download/{}/pdfium-wasm.tgz",
+            PDFIUM_TAG.replace('/', "%2F")
+        );
+        let status = Command::new("curl")
+            .args(["-sSfL", "-o"])
+            .arg(&archive)
+            .arg(&url)
+            .status()?;
+        if !status.success() {
+            bail!("download failed: {url}");
+        }
+    }
+    let digest =
+        Sha256::digest(std::fs::read(&archive)?)
+            .iter()
+            .fold(String::new(), |mut acc, b| {
+                use std::fmt::Write as _;
+                let _ = write!(acc, "{b:02x}");
+                acc
+            });
+    if digest != PDFIUM_WASM_SHA256 {
+        let _ = std::fs::remove_file(&archive);
+        bail!("checksum mismatch for pdfium-wasm.tgz: {digest}");
+    }
+    let tmp = root.join("target/pdfium-wasm");
+    std::fs::create_dir_all(&tmp)?;
+    let status = Command::new("tar")
+        .arg("xzf")
+        .arg(&archive)
+        .arg("-C")
+        .arg(&tmp)
+        .status()?;
+    if !status.success() {
+        bail!("could not unpack pdfium-wasm.tgz");
+    }
+    for f in ["pdfium.js", "pdfium.wasm"] {
+        std::fs::copy(tmp.join("lib").join(f), out.join(f))?;
+    }
+    std::fs::copy(tmp.join("LICENSE"), out.join("PDFIUM-LICENSE.txt"))?;
+    for e in std::fs::read_dir(&out)? {
+        let e = e?;
+        println!(
+            "{:>10}  {}",
+            e.metadata()?.len(),
+            e.file_name().to_string_lossy()
+        );
+    }
+    Ok(())
+}
+
+/// An annotated review of `fixtures/thesis-long` plus the native import result, used
+/// to check that the browser app gives identical answers.
+fn sample(root: &Path) -> Result<()> {
+    let fx_dir = root.join("fixtures/thesis-long");
+    let fx = proofback_corpus::Fixture::load(&fx_dir)?;
+    let pdfium = proofback_pdf::load_pdfium(None)?;
+    let (pdf, truths) =
+        proofback_corpus::generate(&fx, &pdfium, 40, 99).map_err(anyhow::Error::msg)?;
+    let (_, items) = proofback_corpus::evaluate(&fx, &pdfium, &pdf, &truths, true)
+        .map_err(anyhow::Error::msg)?;
+    let out = root.join("target/sample");
+    std::fs::create_dir_all(&out)?;
+    std::fs::write(out.join("review.pdf"), &pdf)?;
+    let expected: Vec<serde_json::Value> = items
+        .iter()
+        .map(|i| serde_json::json!({
+            "nm": match &i.origin { proofback_model::Origin::Pdf { nm, .. } => nm.clone(), _ => None },
+            "confidence": i.anchor.confidence.as_str(),
+            "file": i.target.as_ref().map(|t| t.file.clone()),
+            "start": i.target.as_ref().map(|t| t.range.start),
+            "end": i.target.as_ref().map(|t| t.range.end),
+        }))
+        .collect();
+    std::fs::write(
+        out.join("expected.json"),
+        serde_json::to_string_pretty(&expected)?,
+    )?;
+    println!("wrote {} items to {}", expected.len(), out.display());
     Ok(())
 }
