@@ -9,7 +9,7 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-lopdf = { version = "0.42.0", default-features = false }
+lopdf = { version = "0.47.0", default-features = false }
 pdfium-render = { version = "0.9.6", default-features = false, features = ["pdfium_latest"] }
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.21"
