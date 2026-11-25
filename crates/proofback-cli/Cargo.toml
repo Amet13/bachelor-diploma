@@ -1,5 +1,6 @@
 [package]
 name = "proofback-cli"
+description = "Map reviewer feedback on a PDF to the exact line of your LaTeX source"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,13 +9,28 @@ repository.workspace = true
 homepage.workspace = true
 publish.workspace = true
 
+[[bin]]
+name = "proofback"
+path = "src/main.rs"
+
 [dependencies]
-anyhow = "1.0.105"
 clap = { version = "4.6.10", features = ["derive"] }
+proofback-anchor = { version = "0.0.0", path = "../proofback-anchor" }
+proofback-emit = { version = "0.0.0", path = "../proofback-emit" }
 proofback-model = { version = "0.0.0", path = "../proofback-model" }
+proofback-pdf = { version = "0.0.0", path = "../proofback-pdf" }
+proofback-store = { version = "0.0.0", path = "../proofback-store" }
 proofback-synctex = { version = "0.0.0", path = "../proofback-synctex" }
-proofback-tex = { version = "0.0.0", path = "../proofback-tex" }
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 
 [lints]
 workspace = true
+
+[target."cfg(unix)".dependencies]
+rlimit = "0.12.0"
+
+[dev-dependencies]
+proofback-corpus = { path = "../proofback-corpus" }
+proofback-pdf = { path = "../proofback-pdf" }
+tempfile = "3.27.0"
