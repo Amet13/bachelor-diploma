@@ -31,5 +31,5 @@ cargo xtask schema            # after changing proofback-model
   confined to the project root.
 - No network access in the core; no telemetry.
 - Use plain English in user-facing text; no em dashes on the website.
-- Note user-visible changes in `CHANGELOG.md` under `## Unreleased`. Releases follow
-  `docs/releasing.md` (`cargo xtask bump`, then a tag).
+- Note user-visible changes in `CHANGELOG.md` under `## Unreleased`. Releases are
+  automatic (`docs/releasing.md`); never tag or publish by hand.

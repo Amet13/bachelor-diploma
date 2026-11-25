@@ -35,9 +35,12 @@ the JSON schema is versioned separately (`schema_version` in round files).
   distribution. A build on the newest runner image required glibc 2.43 and failed to
   start on Ubuntu 24.04 and older. The release now checks this, and runs each packaged
   binary before uploading it.
-- `cargo xtask bump <version>` sets the version in every manifest, refreshes
-  `Cargo.lock` and dates the changelog. The release workflow refuses a tag that does not
-  match, and uses the changelog section as the release notes.
+- Releases are automatic. From the GitHub website, run the Release workflow with
+  patch, minor, major or an exact version: it bumps every version field, dates the
+  changelog, commits to `master`, builds, tags and publishes. Merging a version bump
+  releases it too. Nothing is tagged or built by hand.
+- `cargo xtask bump <patch|minor|major|X.Y.Z>` and `cargo xtask release-check` back
+  this up locally; the release notes come from the changelog.
 
 ### CI
 
