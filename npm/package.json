@@ -12,5 +12,5 @@
   "bin": { "proofback": "bin/proofback.js" },
   "files": ["lib/", "bin/", "engine/", "README.md"],
   "engines": { "node": ">=20" },
-  "scripts": { "test": "node --test test/" }
+  "scripts": { "test": "node --test test/*.test.js" }
 }

@@ -7,7 +7,7 @@ default-members = ["crates/*"]
 [workspace.package]
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Amet13/proofback"
 homepage = "https://amet13.github.io/proofback/"
@@ -35,6 +35,7 @@ missing_panics_doc = "allow"
 format_push_string = "allow"
 format_collect = "allow"
 type_complexity = "allow"
+implicit_hasher = "allow"
 
 [profile.release]
 lto = "thin"

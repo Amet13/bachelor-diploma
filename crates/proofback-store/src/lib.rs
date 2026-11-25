@@ -284,7 +284,10 @@ fn collect(
         let path = e.path();
         if ft.is_dir() {
             collect(root, &path, out, skipped, max)?;
-        } else if path.extension().is_some_and(|x| x == "tex" || x == "ltx") {
+        } else if path
+            .extension()
+            .is_some_and(|x| x == "tex" || x == "ltx" || x == "typ")
+        {
             let rel = path
                 .strip_prefix(root)
                 .unwrap_or(&path)

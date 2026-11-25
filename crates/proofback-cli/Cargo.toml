@@ -25,9 +25,15 @@ proofback-notes = { version = "0.0.0", path = "../proofback-notes" }
 proofback-pdf = { version = "0.0.0", path = "../proofback-pdf" }
 proofback-store = { version = "0.0.0", path = "../proofback-store" }
 proofback-synctex = { version = "0.0.0", path = "../proofback-synctex" }
+proofback-typst = { version = "0.0.0", path = "../proofback-typst", optional = true }
 ratatui = "0.29.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
+
+[features]
+default = ["typst"]
+# Typst support through the embedded Typst compiler.
+typst = ["dep:proofback-typst"]
 
 [lints]
 workspace = true
@@ -38,4 +44,6 @@ rlimit = "0.12.0"
 [dev-dependencies]
 proofback-corpus = { path = "../proofback-corpus" }
 proofback-pdf = { path = "../proofback-pdf" }
+proofback-typst = { path = "../proofback-typst" }
 tempfile = "3.27.0"
+

@@ -253,6 +253,20 @@ fn cmd_import(p: &Project, a: &ImportArgs, quiet: bool, style: &Style) -> Result
     p.round_path(&round_name)?;
     let texts: HashMap<u32, proofback_pdf::PageText> =
         extracted.texts.into_iter().map(|t| (t.page, t)).collect();
+    if p.config.main.to_ascii_lowercase().ends_with(".typ") {
+        return crate::typst_cmd::import_pdf(
+            p,
+            a,
+            quiet,
+            style,
+            &round_name,
+            &extracted.annotations,
+            &extracted.boxes,
+            &texts,
+            &sources,
+            &pdf_bytes,
+        );
+    }
     let input = Input {
         round: &round_name,
         annotations: &extracted.annotations,

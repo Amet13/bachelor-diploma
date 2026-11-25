@@ -370,3 +370,77 @@ fn ai_is_off_by_default_and_previews_before_sending() {
     assert_eq!(code, 0, "{err}");
     assert!(out.contains("confirmed (line)"), "{out}");
 }
+
+#[test]
+fn typst_project_import_uses_the_glyph_index() {
+    let Ok(pdfium) = proofback_pdf::load_pdfium(None) else {
+        assert!(
+            std::env::var_os("PROOFBACK_REQUIRE_PDFIUM").is_none(),
+            "PDFium required"
+        );
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let d = dir.path();
+    copy_dir(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/typst-paper"),
+        d,
+    );
+    let mut files = std::collections::HashMap::new();
+    files.insert(
+        "main.typ".to_owned(),
+        std::fs::read_to_string(d.join("main.typ")).unwrap(),
+    );
+    for e in std::fs::read_dir(d.join("sections")).unwrap() {
+        let p = e.unwrap().path();
+        files.insert(
+            format!("sections/{}", p.file_name().unwrap().to_string_lossy()),
+            std::fs::read_to_string(&p).unwrap(),
+        );
+    }
+    let compiled = proofback_typst::compile(&files, "main.typ", None).unwrap();
+    let pdf = proofback_typst::pdf(&compiled).unwrap();
+    // Highlight "Each sensor supports" wherever it appears in the PDF.
+    let ex = proofback_pdf::TextExtractor::open(&pdfium, &pdf).unwrap();
+    let phrase = "Each sensor supports";
+    let (page, chars) = (1..=ex.page_count())
+        .find_map(|p| {
+            let t = ex.page(p).unwrap();
+            let s: String = t.chars.iter().map(|c| c.c).collect();
+            s.find(phrase).map(|b| {
+                (
+                    p,
+                    t.chars[s[..b].chars().count()..s[..b].chars().count() + phrase.len()].to_vec(),
+                )
+            })
+        })
+        .expect("phrase in PDF");
+    let bb = chars
+        .iter()
+        .fold([f32::MAX, f32::MAX, f32::MIN, f32::MIN], |b, c| {
+            [
+                b[0].min(c.bbox[0]),
+                b[1].min(c.bbox[1]),
+                b[2].max(c.bbox[2]),
+                b[3].max(c.bbox[3]),
+            ]
+        });
+    let mut spec = proofback_pdf::AnnotationSpec::new(page, "StrikeOut", bb);
+    spec.quads = vec![[bb[0], bb[3], bb[2], bb[3], bb[0], bb[1], bb[2], bb[1]]];
+    spec.contents = Some("Replace with \u{201c}Every sensor supports\u{201d}".into());
+    std::fs::write(
+        d.join("review.pdf"),
+        proofback_pdf::write_annotations(&pdf, &[spec]).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(run(d, &["init", "-q", "--main", "main.typ"]).0, 0);
+    let (code, out, err) = run(d, &["import", "review.pdf", "--json", "--round", "t1"]);
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let it = &v["items"][0];
+    assert_eq!(it["confidence"], "exact", "{it}");
+    assert_eq!(it["kind"], "replace");
+    let (code, diff, _) = run(d, &["patch"]);
+    assert_eq!(code, 0);
+    assert!(diff.contains("+Every sensor supports"), "{diff}");
+}
