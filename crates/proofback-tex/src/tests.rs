@@ -244,3 +244,30 @@ fn regression_verbatim_unicode_space() {
         );
     }
 }
+
+/// Found by the fuzzer: a macro that uses itself several times expanded
+/// exponentially (4^8 times here) and took tens of seconds on a 500-byte input.
+#[test]
+fn self_referencing_macros_have_bounded_cost() {
+    let src = format!(
+        "\\def\\boom{{\\boom\\boom\\boom\\boom{}}}\n{}",
+        " filler text".repeat(20),
+        "\\boom ".repeat(50)
+    );
+    let opts = Options {
+        macros: collect_macros(&src),
+    };
+    assert!(
+        opts.macros.contains_key("boom"),
+        "the test needs the macro to be collected"
+    );
+    let start = std::time::Instant::now();
+    let n = normalize(&src, &opts);
+    assert!(
+        start.elapsed() < std::time::Duration::from_secs(2),
+        "took {:?}",
+        start.elapsed()
+    );
+    // Output is bounded by the expansion budget plus the source itself.
+    assert!(n.len() < 64 * 1024 + 5 * src.len());
+}

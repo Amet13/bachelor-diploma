@@ -9,10 +9,10 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
-proofback-anchor = { version = "0.1.0", path = "../proofback-anchor" }
-proofback-emit = { version = "0.1.0", path = "../proofback-emit" }
-proofback-model = { version = "0.1.0", path = "../proofback-model" }
-proofback-store = { version = "0.1.0", path = "../proofback-store" }
+proofback-anchor = { version = "0.2.0", path = "../proofback-anchor" }
+proofback-emit = { version = "0.2.0", path = "../proofback-emit" }
+proofback-model = { version = "0.2.0", path = "../proofback-model" }
+proofback-store = { version = "0.2.0", path = "../proofback-store" }
 serde_json = "1.0.154"
 
 [lints]

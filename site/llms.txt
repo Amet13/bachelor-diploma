@@ -1,6 +1,6 @@
 # proofback
 
-> proofback maps reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, notes, email notes, Word tracked changes and comments) to the exact file, line and character range of the LaTeX (or Typst) source. It tracks each item's status and replies across drafts in `.proofback/` inside the author's repository, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native and WebAssembly). AI agents use it through an MCP server; reviewer text is returned as untrusted data. Status: v0.1.0; CLI, MCP server, browser app at /app, npm package and VS Code extension implemented.
+> proofback maps reviewer feedback on a compiled LaTeX PDF (highlights, strike-outs, carets, notes, email notes, Word tracked changes and comments) to the exact file, line and character range of the LaTeX (or Typst) source. It tracks each item's status and replies across drafts in `.proofback/` inside the author's repository, and exports patches, an answered PDF and a response letter. Deterministic, offline core in Rust (native and WebAssembly). AI agents use it through an MCP server; reviewer text is returned as untrusted data. Interfaces: CLI, MCP server, browser app at /app, Node package and VS Code extension. Release notes: https://github.com/Amet13/proofback/blob/master/CHANGELOG.md
 
 ## Docs
 

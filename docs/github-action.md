@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Amet13/proofback@v0.1.0
+      - uses: Amet13/proofback@v0.2.0
         with:
           pdf: reviews/supervisor-ch3.pdf
           synctex: build/main.synctex.gz
@@ -57,7 +57,7 @@ jobs:
           name: proofback-review
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-      - uses: Amet13/proofback@v0.1.0
+      - uses: Amet13/proofback@v0.2.0
         with:
           mode: comment
 ```

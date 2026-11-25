@@ -8,5 +8,9 @@ on the exact lines of your LaTeX sources.
 - Mark items done, won't fix or discuss; reply; apply suggested edits after
   previewing the diff.
 
+Install `proofback-vscode.vsix` from the
+[latest release](https://github.com/Amet13/proofback/releases/latest): in VS Code, run
+**Extensions: Install from VSIX…**, or `code --install-extension proofback-vscode.vsix`.
+
 Requires the `proofback` command (set `proofback.path` if it is not on your PATH)
 and a project initialised with `proofback init`.

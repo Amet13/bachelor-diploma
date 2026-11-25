@@ -1,6 +1,8 @@
 // Offline cache for the proofback app shell and engine. Only same-origin GET
 // requests for the app's own files are cached; no user data passes through here.
-const CACHE = 'proofback-app-v1';
+// The deploy job replaces BUILD with the commit, so every deploy gets a fresh
+// cache and the old one is deleted on activation.
+const CACHE = 'proofback-app-BUILD';
 const FILES = [
   './', 'index.html', 'app.css', 'app.js', 'worker.js',
   'engine/proofback_wasm.js', 'engine/proofback_wasm_bg.wasm', 'engine/pdfium.js', 'engine/pdfium.wasm',
