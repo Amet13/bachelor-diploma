@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>proofback</title>
-  <meta name="description" content="proofback lands every highlight, strike-out and margin note from a reviewed PDF on the exact line of your LaTeX source, tracks what you did about it, and sends the answers back.">
-  <meta name="theme-color" content="#f3ede2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
-  <meta property="og:title" content="proofback — every margin note, back in your source">
-  <meta property="og:description" content="Reviewer feedback on a PDF, anchored to the exact line of your LaTeX source. Deterministic core, agent-ready, runs locally.">
+  <meta name="description" content="proofback maps every highlight, strike-out and note on a reviewed PDF to the exact line of your LaTeX source, tracks what you did about it, and sends the answers back.">
+  <meta name="theme-color" content="#dfe2e6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="proofback">
+  <meta property="og:description" content="Reviewer marks on a PDF, mapped to the exact line of your LaTeX source.">
   <meta property="og:type" content="website">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     try { const t = localStorage.getItem('pb-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -23,222 +23,163 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="masthead">
-    <a class="brand" href="./" aria-label="proofback home">
-      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 22 L13 9 L20 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 22 C 24 22, 27 19, 27 15" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round"/><circle cx="27" cy="12" r="2" fill="var(--red)"/></svg>
-      <span>proof<em>back</em></span>
-    </a>
+  <header class="top">
+    <a class="brand" href="./">proofback</a>
     <nav aria-label="Primary">
-      <a href="#loop">How</a>
+      <a href="#how">How it works</a>
       <a href="#agents">Agents</a>
       <a href="#accuracy">Accuracy</a>
       <a href="#roadmap">Roadmap</a>
       <a href="https://github.com/Amet13/proofback">GitHub</a>
-      <button class="theme" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" fill="currentColor"/></svg>
+      <button class="theme" type="button" aria-label="Toggle dark mode">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3a7 7 0 0 1 0 14Z" fill="currentColor"/></svg>
       </button>
     </nav>
   </header>
 
   <main id="main">
-    <!-- ============ HERO ============ -->
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="kicker"><span class="dot"></span> In design · nothing to install yet</p>
-        <h1 id="hero-title">Every margin note,<br><span class="hand">back in your source.</span></h1>
-        <p class="lede">Your supervisor marked up the PDF. <strong>proofback</strong> lands each highlight, strike-out and sticky note on the exact file, line and characters of your LaTeX — then tracks what you did about it and sends the answers back.</p>
-        <div class="cta">
-          <a class="btn btn-ink" href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Read the plan</a>
-          <a class="btn btn-line" href="https://github.com/Amet13/proofback">Star on GitHub</a>
-        </div>
-        <p class="hint">↓ Click a red mark on the proof to see where it lands.</p>
+    <section class="intro" aria-labelledby="title">
+      <h1 id="title">Every margin note, back in your source.</h1>
+      <div class="intro-side">
+        <p>Your supervisor marked up the PDF. proofback finds the file, line and characters in your LaTeX that each mark refers to, keeps track of what you did about it, and sends your answers back.</p>
+        <p class="actions">
+          <a class="btn" href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Read the plan</a>
+          <a class="textlink" href="https://github.com/Amet13/proofback">Source on GitHub</a>
+        </p>
+        <p class="status">Design phase. Nothing to install yet.</p>
       </div>
+    </section>
 
-      <div class="desk" id="desk">
-        <!-- The reviewer's PDF page -->
-        <article class="proof" aria-label="Annotated PDF page (demo)">
-          <div class="proof-head"><span>review-ch3.pdf</span><span>p. 14</span></div>
-          <h2 class="proof-h">3.2&ensp;Estimating the threshold</h2>
-          <p class="proof-p">
-            The estimator is
-            <button class="mk mk-strike" data-id="1" aria-label="Mark 1: replace">strong<span class="mk-over hand">robust</span></button>
-            under heavy-tailed noise, which makes it
-            <button class="mk mk-hl" data-id="2" aria-label="Mark 2: highlight with note">suitable for sensor data</button>
-            collected in the field. We therefore fix the threshold at
-            <span class="nw"><button class="mk mk-pin" data-id="3" aria-label="Mark 3: sticky note"><i>τ</i>&nbsp;=&nbsp;0.35</button>.</span>
-            <button class="mk mk-del" data-id="4" aria-label="Mark 4: delete sentence">Earlier experiments with a fixed window were inconclusive and are omitted here.</button>
-            Results for the full dataset are given in <span class="nw">Table&nbsp;3.1<button class="mk mk-caret" data-id="5" aria-label="Mark 5: insert text"><span class="caret">⁁</span><span class="mk-ins hand">and Fig. 3.2</span></button>.</span>
-          </p>
-          <p class="proof-p proof-dim">The sensitivity of the procedure to the choice of window length is examined in Section&nbsp;3.4, where we compare three alternatives against the baseline described above.</p>
-          <aside class="margin hand" aria-hidden="true">
-            <span data-for="1">use “robust”<br>not “strong”</span>
-            <span data-for="2">cite the<br>field study!</span>
-            <span data-for="3">why this<br>threshold?</span>
-          </aside>
-          <div class="folio">14</div>
-        </article>
-
-        <!-- The thread between them -->
-        <svg class="thread" id="thread" aria-hidden="true"><path id="thread-path" d=""/><circle id="thread-dot" r="4"/></svg>
-
-        <!-- The source -->
-        <div class="source" aria-label="LaTeX source (demo)">
-          <div class="source-head">
-            <span class="file">chapters/method.tex</span>
-            <span class="badge" id="badge">exact</span>
+    <!-- Demo: a PDF viewer and an editor, side by side -->
+    <section class="viewer" id="desk" aria-label="Interactive demo: click a mark on the PDF page">
+      <div class="pane pane-pdf">
+        <div class="bar"><span>review-ch3.pdf</span><span class="bar-dim">page 14 of 212</span></div>
+        <div class="canvas">
+          <article class="page">
+            <h2 class="page-h"><span>3.2</span> Estimating the threshold</h2>
+            <p>
+              The estimator is
+              <button class="mk mk-strike" data-id="1" aria-label="Mark 1, replace">strong</button><sup>1</sup>
+              under heavy-tailed noise, which makes it
+              <button class="mk mk-hl" data-id="2" aria-label="Mark 2, highlight">suitable for sensor data</button><sup>2</sup>
+              collected in the field. We therefore fix the threshold at
+              <button class="mk mk-note" data-id="3" aria-label="Mark 3, note"><i>τ</i> = 0.35</button><sup>3</sup>.
+              <button class="mk mk-strike" data-id="4" aria-label="Mark 4, delete">Earlier experiments with a fixed window were inconclusive and are omitted here.</button><sup>4</sup>
+              Results for the full dataset are given in <span class="nw">Table 3.1<button class="mk mk-caret" data-id="5" aria-label="Mark 5, insert"></button><sup>5</sup>.</span>
+            </p>
+            <p class="page-dim">The sensitivity of the procedure to the choice of window length is examined in Section 3.4, where we compare three alternatives against the baseline described above.</p>
+            <div class="pageno">14</div>
+          </article>
+          <div class="popups" aria-hidden="true">
+            <div class="pop" data-for="1"><b>M. Ivanova</b><span>Replace with “robust”</span></div>
+            <div class="pop" data-for="2"><b>M. Ivanova</b><span>Cite the field study here</span></div>
+            <div class="pop" data-for="3"><b>M. Ivanova</b><span>Why this threshold?</span></div>
+            <div class="pop" data-for="5"><b>M. Ivanova</b><span>Insert “and Fig. 3.2”</span></div>
           </div>
-          <ol class="code" id="code" start="38"></ol>
-          <div class="item" id="item" aria-live="polite"></div>
         </div>
       </div>
+
+      <svg class="thread" id="thread" aria-hidden="true"><path id="thread-path" d=""/><circle id="thread-dot" r="3.5"/></svg>
+
+      <div class="pane pane-src">
+        <div class="bar"><span>chapters/method.tex</span><span class="bar-dim" id="badge">exact</span></div>
+        <ol class="code" id="code"></ol>
+        <div class="item" id="item" aria-live="polite"></div>
+      </div>
+      <p class="viewer-hint">Click any marked text on the page.</p>
     </section>
 
-    <!-- ============ THE LOOP ============ -->
-    <section class="loop" id="loop" aria-labelledby="loop-title">
-      <header class="sec-head">
-        <span class="sec-mark" aria-hidden="true">¶</span>
-        <h2 id="loop-title">One review round, closed properly</h2>
-        <p>Four steps, all local, all in plain files you commit next to your thesis.</p>
-      </header>
-      <ol class="steps">
-        <li>
-          <span class="proofmark" aria-hidden="true">⁁</span>
-          <h3>Import</h3>
-          <p>Drop in the annotated PDF — from Acrobat, Preview, Zotero, Okular or an iPad app. Email notes and Word tracked changes follow.</p>
-          <code>proofback import review-ch3.pdf</code>
-        </li>
-        <li>
-          <span class="proofmark" aria-hidden="true">⌖</span>
-          <h3>Anchor</h3>
-          <p>SyncTeX finds the lines; a TeX-aware aligner finds the exact characters — even through <code>\ref</code>, ligatures and hyphenation.</p>
-          <code>proofback list</code>
-        </li>
-        <li>
-          <span class="proofmark" aria-hidden="true">✓</span>
-          <h3>Resolve</h3>
-          <p>Apply mechanical edits as a diff, reply to questions, mark what you won't change. Anchors follow your edits into the next draft.</p>
-          <code>proofback resolve pb_3xq --reply "…"</code>
-        </li>
-        <li>
-          <span class="proofmark stet" aria-hidden="true">stet</span>
-          <h3>Answer</h3>
-          <p>Hand the reviewer back their own PDF with a reply on every note — or a response-to-reviewers letter, generated from the same data.</p>
-          <code>proofback answer -o answered.pdf</code>
-        </li>
-      </ol>
+    <section class="how" id="how" aria-labelledby="how-title">
+      <h2 id="how-title">How it works</h2>
+      <dl class="steps">
+        <div>
+          <dt><code>proofback import review-ch3.pdf</code></dt>
+          <dd>Reads every annotation in the PDF, whichever app made it: Acrobat, Preview, Zotero, Okular, PDF Expert, an iPad.</dd>
+        </div>
+        <div>
+          <dt><code>proofback list</code></dt>
+          <dd>SyncTeX narrows each mark to a few lines. A TeX-aware aligner then finds the exact characters, through <code>\ref</code>, macros, ligatures and hyphenation. Each item says how sure it is.</dd>
+        </div>
+        <div>
+          <dt><code>proofback patch</code>, <code>resolve</code></dt>
+          <dd>Mechanical edits become a diff you can review. Questions get replies. Items you won't change get a reason. Everything is saved in <code>.proofback/</code> and follows your edits into the next draft.</dd>
+        </div>
+        <div>
+          <dt><code>proofback answer</code>, <code>letter</code></dt>
+          <dd>Send the reviewer their own PDF back with your reply on every note, or a response letter built from the same data.</dd>
+        </div>
+      </dl>
     </section>
 
-    <!-- ============ INPUTS ============ -->
     <section class="inputs" aria-labelledby="inputs-title">
-      <header class="sec-head">
-        <span class="sec-mark" aria-hidden="true">§</span>
-        <h2 id="inputs-title">Built for the reviewer who will never install anything</h2>
-        <p>Your supervisor keeps their tools. proofback reads what they already send.</p>
-      </header>
-      <div class="cards">
-        <div class="card">
-          <div class="card-tag">v0.1</div>
-          <h3>Annotated PDF</h3>
-          <p>Highlights, underlines, strike-outs, carets, sticky notes, free text, ink — with replies and authors.</p>
-        </div>
-        <div class="card">
-          <div class="card-tag">v0.5</div>
-          <h3>An email of notes</h3>
-          <p>“p.&nbsp;12, ¶2: unclear”, “§3.1 ‘state of the art’ → ‘current’” — parsed, located, confirmed by you.</p>
-        </div>
-        <div class="card">
-          <div class="card-tag">v0.6</div>
-          <h3>Word, round trip</h3>
-          <p>Export a DOCX with invisible source anchors; tracked changes and comments come back as precise items.</p>
-        </div>
-        <div class="card card-quiet">
-          <div class="card-tag">never</div>
-          <h3>Accounts, servers, uploads</h3>
-          <p>State lives in <code>.proofback/</code> in your repo. The browser app runs in WebAssembly on your machine.</p>
-        </div>
-      </div>
+      <h2 id="inputs-title">What reviewers can send</h2>
+      <p class="lead">The reviewer keeps using whatever they already use. No accounts, no uploads.</p>
+      <table class="tbl">
+        <thead><tr><th scope="col">Input</th><th scope="col">From</th><th scope="col">Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Annotated PDF</td><td>v0.1</td><td>Highlights, underlines, strike-outs, carets, notes, free text, ink. Replies and authors kept.</td></tr>
+          <tr><td>Notes in an email</td><td>v0.5</td><td>“p. 12, ¶2: unclear”. Parsed, located, and confirmed by you before anything changes.</td></tr>
+          <tr><td>Word document</td><td>v0.6</td><td>Exported with hidden source anchors, so tracked changes and comments map back precisely.</td></tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- ============ AGENTS ============ -->
     <section class="agents" id="agents" aria-labelledby="agents-title">
-      <div class="agents-copy">
-        <header class="sec-head sec-left">
-          <span class="sec-mark" aria-hidden="true">⌘</span>
-          <h2 id="agents-title">Your agent reads the margins now</h2>
-        </header>
-        <p>The core is deterministic and offline. AI is a client, not a dependency: an MCP server gives Claude Code, Codex or Cursor each item with its exact source range and context, lets them propose a patch, and records the reply.</p>
-        <ul class="ticks">
-          <li><strong>Guard-railed.</strong> An item can only be marked <em>done</em> if its anchored text actually changed.</li>
-          <li><strong>Structured.</strong> <code>--json</code> on every command, a published schema, <code>llms.txt</code>.</li>
-          <li><strong>Optional suggestions.</strong> Bring your own model — or none at all.</li>
-        </ul>
+      <div>
+        <h2 id="agents-title">Works with coding agents</h2>
+        <p>The core is plain, repeatable code that runs offline. Agents use it through an MCP server: they get each item with its source range and context, propose a patch, and record a reply.</p>
+        <p>An agent can't mark an item done unless the text it points to has actually changed. Every command has <code>--json</code> output and a published schema. Built-in AI suggestions are optional and use your own model.</p>
       </div>
-      <div class="term" role="img" aria-label="Example agent session using the proofback MCP server">
-        <div class="term-bar"><i></i><i></i><i></i><span>planned · v0.3</span></div>
-        <pre><span class="u">you ›</span> work through the open proofback items in chapter 3
+      <figure class="term" aria-label="Example agent session (planned for v0.3)">
+        <figcaption>agent session · planned for v0.3</figcaption>
+<pre><span class="u">&gt;</span> work through the open proofback items in chapter 3
 
-<span class="a">●</span> proofback.list_items <span class="d">{status: "open", file: "chapters/*"}</span>
-  <span class="d">→ 5 items · 4 exact · 1 line</span>
-<span class="a">●</span> proofback.get_item <span class="d">("pb_7k2m9q", context_lines: 20)</span>
-<span class="a">●</span> proofback.propose_patch <span class="d">("pb_7k2m9q")</span>
+<span class="a">list_items</span>     <span class="d">status=open file=chapters/*</span>
+               <span class="d">5 items: 4 exact, 1 line</span>
+<span class="a">get_item</span>       <span class="d">pb_7k2m9q context_lines=20</span>
+<span class="a">propose_patch</span>  <span class="d">pb_7k2m9q</span>
   <span class="m">- The estimator is strong under</span>
   <span class="p">+ The estimator is robust under</span>
-  <span class="ok">✓ applies · touches anchor</span>
-<span class="a">●</span> proofback.resolve_item <span class="d">("pb_3xq1fd", "discuss")</span>
-  <span class="d">reply: "Chosen by 5-fold CV — add a sentence in §3.4?"</span>
+               <span class="p">applies, touches the anchored text</span>
+<span class="a">resolve_item</span>   <span class="d">pb_3xq1fd discuss</span>
+               <span class="d">"Chosen by 5-fold CV. Add a line to 3.4?"</span>
 
-<span class="u">agent ›</span> 3 fixed, 1 needs your call, 1 figure left for you.</pre>
-      </div>
+3 fixed, 1 needs your decision, 1 figure left for you.</pre>
+      </figure>
     </section>
 
-    <!-- ============ ACCURACY ============ -->
     <section class="accuracy" id="accuracy" aria-labelledby="acc-title">
-      <header class="sec-head">
-        <span class="sec-mark" aria-hidden="true">±</span>
-        <h2 id="acc-title">Accuracy is the product, so we'll publish it</h2>
-        <p>A CI-built corpus of real-shaped theses and papers, annotated the way each PDF app really writes annotations. Every release regenerates this sheet; regressions block the release.</p>
-      </header>
-      <div class="sheet" role="table" aria-label="Accuracy report (to be measured)">
-        <div class="row head" role="row"><span role="columnheader">measure</span><span role="columnheader">with SyncTeX</span><span role="columnheader">text only</span></div>
-        <div class="row" role="row"><span role="cell">exact character range</span><span role="cell" class="tbd">—</span><span role="cell" class="tbd">—</span></div>
-        <div class="row" role="row"><span role="cell">correct line</span><span role="cell" class="tbd">—</span><span role="cell" class="tbd">—</span></div>
-        <div class="row" role="row"><span role="cell">fell back to “page”</span><span role="cell" class="tbd">—</span><span role="cell" class="tbd">—</span></div>
-        <div class="row" role="row"><span role="cell">300 pages · 500 notes</span><span role="cell">budget &lt; 1 s</span><span role="cell">budget &lt; 3 s (browser)</span></div>
-        <p class="sheet-note hand">first numbers with v0.1 — no made-up figures here</p>
-      </div>
+      <h2 id="acc-title">Accuracy, measured every release</h2>
+      <p class="lead">CI builds a set of realistic theses and papers, annotates them the way each PDF app actually writes annotations, and checks where proofback lands. A release that does worse than the last one doesn't ship. The first numbers arrive with v0.1.</p>
+      <table class="tbl tbl-num">
+        <thead><tr><th scope="col">Measure</th><th scope="col">With SyncTeX</th><th scope="col">Text only</th></tr></thead>
+        <tbody>
+          <tr><td>Exact character range</td><td>not yet measured</td><td>not yet measured</td></tr>
+          <tr><td>Correct line</td><td>not yet measured</td><td>not yet measured</td></tr>
+          <tr><td>Page only (needs a human)</td><td>not yet measured</td><td>not yet measured</td></tr>
+          <tr><td>300 pages, 500 notes</td><td>target under 1 s</td><td>target under 3 s in a browser</td></tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- ============ ROADMAP ============ -->
     <section class="roadmap" id="roadmap" aria-labelledby="road-title">
-      <header class="sec-head">
-        <span class="sec-mark" aria-hidden="true">→</span>
-        <h2 id="road-title">Galley proofs of the roadmap</h2>
-      </header>
-      <ol class="galley">
-        <li class="now"><b>M0</b><span>Reset, plan, this site</span></li>
-        <li><b>v0.1</b><span>PDF import · anchoring · <code>list</code></span></li>
-        <li><b>v0.2</b><span>Resolve · patch · sync · answered PDF · letter</span></li>
-        <li><b>v0.3</b><span>MCP server · agent kit · GitHub Action</span></li>
-        <li><b>v0.4</b><span>Browser app (WASM) · npm</span></li>
-        <li><b>v0.5</b><span>Email notes · optional suggestions</span></li>
-        <li><b>v0.6</b><span>Word round trip</span></li>
-        <li><b>v0.7+</b><span>VS Code · Typst · v1.0 schema</span></li>
+      <h2 id="road-title">Roadmap</h2>
+      <ol class="road">
+        <li class="done"><b>M0</b> Plan and website</li>
+        <li><b>v0.1</b> PDF import, anchoring, <code>list</code></li>
+        <li><b>v0.2</b> Resolve, patch, sync, answered PDF, response letter</li>
+        <li><b>v0.3</b> MCP server, agent kit, GitHub Action</li>
+        <li><b>v0.4</b> Browser app (WebAssembly), npm package</li>
+        <li><b>v0.5</b> Email notes, optional AI suggestions</li>
+        <li><b>v0.6</b> Word round trip</li>
+        <li><b>later</b> VS Code extension, Typst, schema 1.0</li>
       </ol>
     </section>
   </main>
 
-  <footer class="colophon">
-    <div>
-      <p class="colo-title">Colophon</p>
-      <p>Set in Newsreader, JetBrains Mono and Caveat. Static HTML, no trackers, no cookies.</p>
-    </div>
-    <div>
-      <p>Checking a paper <em>before</em> you submit it? That's <a href="https://github.com/Amet13/overfull">overfull</a>. proofback starts after someone has read it.</p>
-    </div>
-    <div>
-      <p><a href="https://github.com/Amet13/proofback">GitHub</a> · <a href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Plan</a> · <a href="llms.txt">llms.txt</a></p>
-      <p class="small">MIT OR Apache-2.0</p>
-    </div>
+  <footer class="foot">
+    <p>proofback · MIT or Apache-2.0 · <a href="https://github.com/Amet13/proofback">GitHub</a> · <a href="https://github.com/Amet13/proofback/blob/main/docs/PLAN.md">Plan</a> · <a href="llms.txt">llms.txt</a></p>
+    <p>Checking a paper before you submit it? Use <a href="https://github.com/Amet13/overfull">overfull</a>. proofback is for after someone has read it.</p>
   </footer>
 
   <script src="app.js" defer></script>
