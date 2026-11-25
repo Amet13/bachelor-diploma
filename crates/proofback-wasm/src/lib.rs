@@ -58,7 +58,7 @@ pub fn read_zip(bytes: &[u8]) -> Result<String, JsError> {
             .enclosed_name()
             .map(|p| p.to_string_lossy().replace('\\', "/"))
         else {
-            skipped.push(format!("{} (unsafe path)", f.name()));
+            skipped.push(format!("{} (unsafe path)", f.name().unwrap_or_default()));
             continue;
         };
         let lower = path.to_ascii_lowercase();

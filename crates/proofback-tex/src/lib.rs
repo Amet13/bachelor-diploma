@@ -808,3 +808,53 @@ fn name_is_letter_accent(src: &str, i: usize) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+/// Byte ranges of the paragraphs in `text[range]`: runs of lines separated by one
+/// or more blank (empty or whitespace-only) lines. Handles LF and CRLF. Each range
+/// is trimmed of surrounding whitespace; empty paragraphs are skipped.
+pub fn paragraph_ranges(text: &str, range: Range<usize>) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut para_start: Option<usize> = None;
+    let mut last_end = range.start;
+    let mut pos = range.start;
+    let slice = &text[range.clone()];
+    for line in slice.split_inclusive('\n') {
+        let line_start = pos;
+        pos += line.len();
+        if line.trim().is_empty() {
+            if let Some(s) = para_start.take() {
+                out.push(s..last_end);
+            }
+        } else {
+            let lead = line.len() - line.trim_start().len();
+            if para_start.is_none() {
+                para_start = Some(line_start + lead);
+            }
+            last_end = line_start + line.trim_end().len();
+        }
+    }
+    if let Some(s) = para_start {
+        out.push(s..last_end);
+    }
+    out
+}
+
+#[cfg(test)]
+mod paragraph_tests {
+    use super::paragraph_ranges;
+
+    #[test]
+    fn splits_lf_and_crlf_alike() {
+        let lf = "a\nb\n\n  c\n \n\nd";
+        let crlf = lf.replace('\n', "\r\n");
+        let p = |t: &str| {
+            paragraph_ranges(t, 0..t.len())
+                .into_iter()
+                .map(|r| t[r].replace("\r\n", "\n"))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(p(lf), ["a\nb", "c", "d"]);
+        assert_eq!(p(&crlf), ["a\nb", "c", "d"]);
+        assert_eq!(paragraph_ranges("x\n\ny", 2..4), vec![3..4]);
+    }
+}

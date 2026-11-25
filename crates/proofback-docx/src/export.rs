@@ -106,14 +106,8 @@ fn split_paragraphs(
     out: &mut Vec<Paragraph>,
 ) {
     let text = &src.text;
-    let mut offset = range.start;
-    for chunk in text[range.clone()].split("\n\n") {
-        let s = offset + (chunk.len() - chunk.trim_start().len());
-        let e = offset + chunk.trim_end().len();
-        offset += chunk.len() + 2;
-        if s >= e {
-            continue;
-        }
+    for r in proofback_tex::paragraph_ranges(text, range.clone()) {
+        let (s, e) = (r.start, r.end);
         let trimmed = text[s..e].trim_start();
         let heading = ["\\chapter", "\\section", "\\subsection", "\\subsubsection"]
             .iter()
