@@ -1,0 +1,25 @@
+\section{Estimating the threshold}\label{sec:thr}
+
+% TODO: tighten this paragraph
+The estimator is strong under heavy-tailed noise,
+which makes it suitable for sensor data collected
+in the field. We therefore fix the threshold at
+$\tau = 0.35$.
+Earlier experiments with a fixed window were
+inconclusive and are omitted here.
+Results for the full dataset are given in
+Table~\ref{tab:full}.
+
+The sensitivity of the procedure to the choice of window length is examined
+in Section~\ref{sec:thr}, where we compare three alternatives against the
+baseline described above. Using \emph{robust} weights---as in \method{}---we
+avoid ``outliers'' dominating the fit.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+Dataset & Error \\
+Full & 0.12 \\
+\end{tabular}
+\caption{Results on the full dataset.}\label{tab:full}
+\end{table}

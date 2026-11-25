@@ -1,0 +1,20 @@
+[package]
+name = "proofback-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = "1.0.105"
+clap = { version = "4.6.10", features = ["derive"] }
+proofback-model = { version = "0.0.0", path = "../proofback-model" }
+proofback-synctex = { version = "0.0.0", path = "../proofback-synctex" }
+proofback-tex = { version = "0.0.0", path = "../proofback-tex" }
+serde_json = "1.0.154"
+
+[lints]
+workspace = true
