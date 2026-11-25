@@ -1,0 +1,42 @@
+name: Fuzz
+
+# Nightly exploratory fuzzing with random seeds. Pull requests run a short,
+# deterministic pass in rust.yml instead. A crash here uploads the input as an
+# artifact; add it as a regression test with the fix.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [synctex, tex_normalize]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # nightly
+        with:
+          toolchain: nightly-2026-11-01
+      - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
+        with:
+          tool: cargo-fuzz@0.13.2
+      - name: Fuzz for 20 minutes
+        working-directory: fuzz
+        env:
+          RUSTFLAGS: ""
+        run: cargo fuzz run --target x86_64-unknown-linux-gnu ${{ matrix.target }} -- -max_total_time=1200 -timeout=10
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-${{ matrix.target }}
+          path: fuzz/artifacts

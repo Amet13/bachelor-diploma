@@ -5,6 +5,15 @@ the JSON schema is versioned separately (`schema_version` in round files).
 
 ## 0.2.0 (2026-11-25)
 
+### Fixes
+
+- SyncTeX: a file with a huge `X Offset` or `Y Offset` overflowed when offsets were
+  added to coordinates (a panic in debug builds, wrong positions in release builds).
+  Found by fuzzing.
+- LaTeX sources: a macro that uses itself several times expanded exponentially, so a
+  500-byte file could take close to a minute to read. Macro expansion now has a fixed
+  budget per file; beyond it, a macro counts as unknown text. Found by fuzzing.
+
 ### Website and app
 
 - One type scale (7 sizes, 3 weights) and one set of colour tokens for the website and
@@ -32,7 +41,9 @@ the JSON schema is versioned separately (`schema_version` in round files).
   in one job could race and fail the deploy, as happened on `master`.
 - Runs on `master` are no longer cancelled by a newer push; only superseded
   pull-request runs are.
-- The fuzz job uses a pinned nightly and a pinned `cargo-fuzz`.
+- Fuzzing on pull requests is deterministic (fixed seed and run count, 10-second limit
+  per input), so it fails only for a bug the change can reproduce. Random fuzzing runs
+  nightly in its own workflow, with a pinned nightly and `cargo-fuzz`.
 - Dependabot groups updates into one pull request per ecosystem and now also covers
   Cargo and the VS Code extension.
 

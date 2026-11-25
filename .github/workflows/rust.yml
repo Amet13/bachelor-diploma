@@ -173,11 +173,14 @@ jobs:
       - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
           tool: cargo-fuzz@0.13.2
-      - name: Fuzz each target for two minutes
+      # Fixed seed and run count: the result depends only on the code, so a pull
+      # request turns red only for a bug it can reproduce. Random, longer fuzzing
+      # runs nightly in fuzz.yml.
+      - name: Fuzz each target (deterministic)
         working-directory: fuzz
         env:
           RUSTFLAGS: ""
         run: |
-          for t in $(cargo fuzz list); do
-            cargo fuzz run --target x86_64-unknown-linux-gnu "$t" -- -max_total_time=120
-          done
+          # About a minute in total; the normaliser does more work per input.
+          cargo fuzz run --target x86_64-unknown-linux-gnu synctex -- -seed=1 -runs=1500000 -timeout=10
+          cargo fuzz run --target x86_64-unknown-linux-gnu tex_normalize -- -seed=1 -runs=500000 -timeout=10
