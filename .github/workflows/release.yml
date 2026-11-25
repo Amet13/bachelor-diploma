@@ -54,12 +54,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, pdfium: linux-x64, archive: tar.gz }
-          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pdfium: linux-arm64, archive: tar.gz }
-          - { target: x86_64-apple-darwin, os: macos-latest, pdfium: mac-x64, archive: tar.gz }
-          - { target: aarch64-apple-darwin, os: macos-latest, pdfium: mac-arm64, archive: tar.gz }
-          - { target: x86_64-pc-windows-msvc, os: windows-latest, pdfium: win-x64, archive: zip }
-          - { target: aarch64-pc-windows-msvc, os: windows-11-arm, pdfium: win-arm64, archive: zip }
+          # Linux links against glibc 2.17 (cargo-zigbuild), so the binary runs on
+          # every maintained distribution, not only on the runner's own.
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, pdfium: linux-x64, archive: tar.gz, glibc: "2.17", run: true }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm, pdfium: linux-arm64, archive: tar.gz, glibc: "2.17", run: true }
+          # Intel macOS is cross-built on an Apple Silicon runner and cannot run there.
+          - { target: x86_64-apple-darwin, os: macos-latest, pdfium: mac-x64, archive: tar.gz, run: false }
+          - { target: aarch64-apple-darwin, os: macos-latest, pdfium: mac-arm64, archive: tar.gz, run: true }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, pdfium: win-x64, archive: zip, run: true }
+          - { target: aarch64-pc-windows-msvc, os: windows-11-arm, pdfium: win-arm64, archive: zip, run: true }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     permissions:
@@ -74,8 +77,27 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
+      - name: Install zig and cargo-zigbuild (Linux)
+        if: matrix.glibc
+        run: python3 -m pip install --user --break-system-packages ziglang==0.15.2 || python3 -m pip install --user ziglang==0.15.2
+      - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
+        if: matrix.glibc
+        with:
+          tool: cargo-zigbuild@0.24.1
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }} -p proofback-cli
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.glibc }}" ]; then
+            cargo zigbuild --release --locked --target "${{ matrix.target }}.${{ matrix.glibc }}" -p proofback-cli
+          else
+            cargo build --release --locked --target ${{ matrix.target }} -p proofback-cli
+          fi
+      - name: The Linux binary needs no glibc newer than ${{ matrix.glibc }}
+        if: matrix.glibc
+        run: |
+          newest="$(objdump -T target/${{ matrix.target }}/release/proofback | grep -o 'GLIBC_[0-9.]*' | sed 's/GLIBC_//' | sort -uV | tail -1)"
+          echo "newest glibc symbol: $newest"
+          [ "$(printf '%s\n%s\n' "$newest" "${{ matrix.glibc }}" | sort -V | tail -1)" = "${{ matrix.glibc }}" ]
       - name: Fetch the pinned PDFium for this platform
         run: cargo xtask pdfium --platform ${{ matrix.pdfium }}
       - name: Package
@@ -91,6 +113,9 @@ jobs:
           cp target/pdfium/LICENSE "dist/$name/PDFIUM-LICENSE"
           cp -r target/pdfium/licenses "dist/$name/pdfium-licenses"
           cp README.md LICENSE-MIT LICENSE-APACHE "dist/$name/"
+          if [ "${{ matrix.run }}" = "true" ]; then
+            "dist/$name/proofback" --version
+          fi
           cd dist
           if [ "${{ matrix.archive }}" = "zip" ]; then
             7z a "$name.zip" "$name" > /dev/null

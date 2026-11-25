@@ -32,7 +32,7 @@ Homebrew tap is left alone.
 | Job | Result |
 |---|---|
 | verify | Fails unless the tag, every version field, `Cargo.lock` and `CHANGELOG.md` agree |
-| build | Archives for Linux, macOS and Windows (x86_64 and ARM64) with PDFium, SHA-256 files and signed build provenance |
+| build | Archives for Linux, macOS and Windows (x86_64 and ARM64) with PDFium, SHA-256 files and signed build provenance. Linux links against glibc 2.17; each binary is run before upload |
 | vsix | VS Code extension, tested and packed as `proofback-vscode.vsix` |
 | node | Node package, checked against the native result and packed as `proofback-node.tgz` |
 | publish | GitHub Release with the changelog section as notes and all of the above, plus `install.sh`, `install.ps1` and `proofback.rb` |
