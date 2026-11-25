@@ -27,13 +27,13 @@ the JSON schema is versioned separately (`schema_version` in round files).
 
 ### Releases
 
-- A version tag now publishes to npm (with provenance), the Homebrew tap and the VS Code
-  Marketplace, in addition to the GitHub Release. Each step is skipped, with a notice,
-  until its token is configured.
+- Every release now carries the Node package (`proofback-node.tgz`) and the VS Code
+  extension (`proofback-vscode.vsix`), both tested before packing, with stable
+  "latest" download links. Nothing is published to npm or the VS Code Marketplace.
+- Optional Homebrew tap update when `HOMEBREW_TAP_TOKEN` is set.
 - `cargo xtask bump <version>` sets the version in every manifest, refreshes
   `Cargo.lock` and dates the changelog. The release workflow refuses a tag that does not
   match, and uses the changelog section as the release notes.
-- The VS Code extension package (`.vsix`) is attached to every GitHub Release.
 
 ### CI
 
