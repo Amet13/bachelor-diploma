@@ -1011,6 +1011,7 @@ dependencies = [
  "proofback-anchor",
  "proofback-corpus",
  "proofback-emit",
+ "proofback-mcp",
  "proofback-model",
  "proofback-pdf",
  "proofback-store",
@@ -1044,6 +1045,18 @@ dependencies = [
  "proofback-model",
  "proofback-pdf",
  "serde_json",
+]
+
+[[package]]
+name = "proofback-mcp"
+version = "0.0.0"
+dependencies = [
+ "proofback-anchor",
+ "proofback-emit",
+ "proofback-model",
+ "proofback-store",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

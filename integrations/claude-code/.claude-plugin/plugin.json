@@ -1,0 +1,10 @@
+{
+  "name": "proofback",
+  "description": "Work through reviewer feedback on LaTeX documents: items anchored to exact source ranges, a guarded MCP server, and a review skill.",
+  "version": "0.1.0",
+  "author": { "name": "proofback contributors" },
+  "homepage": "https://amet13.github.io/proofback/",
+  "repository": "https://github.com/Amet13/proofback",
+  "license": "MIT OR Apache-2.0",
+  "keywords": ["latex", "review", "pdf", "thesis", "mcp"]
+}
