@@ -1,0 +1,5 @@
+# Fixtures are byte-exact: SyncTeX files and ground truth refer to byte offsets.
+fixtures/** -text
+*.pdf binary
+*.synctex.gz binary
+*.woff2 binary

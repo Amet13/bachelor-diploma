@@ -451,37 +451,25 @@ fn paragraph_on_page(
 
 /// Byte range of the blank-line-separated paragraph containing `offset`.
 fn paragraph_around(text: &str, offset: usize) -> std::ops::Range<usize> {
-    let start = text[..offset].rfind("\n\n").map_or(0, |i| i + 2);
-    let end = text[offset..]
-        .find("\n\n")
-        .map_or(text.len(), |i| offset + i);
-    start..end
+    proofback_tex::paragraph_ranges(text, 0..text.len())
+        .into_iter()
+        .find(|r| r.start <= offset && offset <= r.end)
+        .unwrap_or(offset..offset)
 }
 
-/// The `k`-th paragraph (1-based) inside `range`, skipping the heading line.
+/// The `k`-th paragraph (1-based) inside `range`, skipping heading lines.
 fn nth_paragraph(
     text: &str,
     range: std::ops::Range<usize>,
     k: usize,
 ) -> Option<std::ops::Range<usize>> {
-    let body = &text[range.clone()];
-    let mut offset = range.start;
-    let mut count = 0;
-    for chunk in body.split("\n\n") {
-        let trimmed = chunk.trim();
-        let start = offset + chunk.len() - chunk.trim_start().len();
-        offset += chunk.len() + 2;
-        if trimmed.is_empty()
-            || (trimmed.starts_with('\\') && !trimmed.contains('\n') && trimmed.ends_with('}'))
-        {
-            continue;
-        }
-        count += 1;
-        if count == k {
-            return Some(start..start + trimmed.len());
-        }
-    }
-    None
+    proofback_tex::paragraph_ranges(text, range)
+        .into_iter()
+        .filter(|r| {
+            let t = &text[r.clone()];
+            !(t.starts_with('\\') && !t.contains('\n') && t.ends_with('}'))
+        })
+        .nth(k.checked_sub(1)?)
 }
 
 #[cfg(test)]
