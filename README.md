@@ -7,8 +7,8 @@ reads them and tells you, for each one, the file, line and characters in your La
 source it refers to. It keeps a record of what you changed and what you didn't (and
 why), and writes your replies back into the reviewer's own PDF or a response letter.
 
-Version 0.1.0. Website and browser app: <https://amet13.github.io/proofback/>.
-Design notes and decision log: [`docs/PLAN.md`](docs/PLAN.md).
+Website and browser app: <https://amet13.github.io/proofback/>. Changes in each release:
+[`CHANGELOG.md`](CHANGELOG.md). Design notes and decision log: [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Why this exists
 
@@ -21,10 +21,16 @@ source from Word, or ask every reviewer to sign up for a platform.
 
 ## Install
 
-From a release (Linux and macOS; PowerShell installer for Windows in the release):
+macOS and Linux:
 
 ```bash
 curl -fsSL https://github.com/Amet13/proofback/releases/latest/download/install.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://github.com/Amet13/proofback/releases/latest/download/install.ps1 | iex
 ```
 
 From source (Rust 1.92 or later):
@@ -36,7 +42,13 @@ cargo install --git https://github.com/Amet13/proofback proofback-cli
 Positioned PDF text needs PDFium; the release bundles it. Without it, proofback falls
 back to the text stored in the annotations. No install at all: open the
 [browser app](https://amet13.github.io/proofback/app/), which runs on your machine.
-Node: `npm install proofback`.
+
+Each [release](https://github.com/Amet13/proofback/releases/latest) also carries the
+VS Code extension (`proofback-vscode.vsix`) and a Node package:
+
+```bash
+npm install https://github.com/Amet13/proofback/releases/latest/download/proofback-node.tgz
+```
 
 ## Usage
 

@@ -3,7 +3,10 @@
 The proofback engine compiled to WebAssembly, for Node 20+. It maps reviewer
 feedback on a PDF to the exact line of your LaTeX source. Everything runs locally.
 
+Install from the latest GitHub Release (it is not published to the npm registry):
+
 ```bash
+npm install https://github.com/Amet13/proofback/releases/latest/download/proofback-node.tgz
 npx proofback import review.pdf --synctex main.synctex.gz
 ```
 

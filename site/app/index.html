@@ -17,7 +17,7 @@
   <header class="top">
     <a class="brand" href="../">proofback</a>
     <nav aria-label="App">
-      <span class="local-note">Everything stays on this computer.</span>
+      <span class="local-note">Files stay on this computer</span>
       <a href="https://github.com/Amet13/proofback">GitHub</a>
     </nav>
   </header>
@@ -25,7 +25,7 @@
   <main id="main">
     <section id="setup" class="setup" aria-labelledby="setup-title">
       <h1 id="setup-title">Open a review</h1>
-      <p class="hint intro-hint">Three files, all read here in the browser. Nothing is sent anywhere, so this works offline too.</p>
+      <p class="lead">Files are read in this browser and never uploaded. It works offline after the first visit.</p>
       <ol class="steps-form">
         <li>
           <label for="pdf-input">Annotated PDF</label>
@@ -61,12 +61,12 @@
           <span id="round-counts" class="muted"></span>
         </div>
         <div class="exports" role="group" aria-label="Export">
-          <button type="button" data-export="round">Round file</button>
-          <button type="button" data-export="patch">Patch</button>
-          <button type="button" data-export="markdown">Checklist</button>
-          <button type="button" data-export="letter_markdown">Letter (Markdown)</button>
-          <button type="button" data-export="letter_latex">Letter (LaTeX)</button>
-          <button type="button" data-export="answer">Answered PDF</button>
+          <button type="button" class="ctl" data-export="round">Round file</button>
+          <button type="button" class="ctl" data-export="patch">Patch</button>
+          <button type="button" class="ctl" data-export="markdown">Checklist</button>
+          <button type="button" class="ctl" data-export="letter_markdown">Letter (Markdown)</button>
+          <button type="button" class="ctl" data-export="letter_latex">Letter (LaTeX)</button>
+          <button type="button" class="ctl" data-export="answer">Answered PDF</button>
         </div>
       </div>
       <div class="panes">
@@ -84,14 +84,14 @@
           <ol id="src-lines" class="code"></ol>
           <div class="decide">
             <div class="decide-buttons" role="group" aria-label="Decision">
-              <button type="button" data-status="done" title="d">Done</button>
-              <button type="button" data-status="wontfix" title="w">Won't fix</button>
-              <button type="button" data-status="discuss" title="x">Discuss</button>
-              <button type="button" data-status="open" title="o">Reopen</button>
+              <button type="button" class="ctl" data-status="done" title="d">Done</button>
+              <button type="button" class="ctl" data-status="wontfix" title="w">Won't fix</button>
+              <button type="button" class="ctl" data-status="discuss" title="x">Discuss</button>
+              <button type="button" class="ctl" data-status="open" title="o">Reopen</button>
             </div>
             <label for="reply" class="sr">Reply to the reviewer</label>
             <textarea id="reply" rows="2" placeholder="Reply to the reviewer (r)"></textarea>
-            <button id="reply-btn" type="button">Save reply</button>
+            <button id="reply-btn" class="ctl" type="button">Save reply</button>
             <p id="decide-status" class="status-line" role="status" aria-live="polite"></p>
           </div>
         </section>

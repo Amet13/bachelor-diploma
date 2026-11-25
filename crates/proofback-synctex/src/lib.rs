@@ -539,8 +539,9 @@ impl Parser {
                         tag: fields.tag,
                         line: fields.line,
                         column: fields.column,
-                        x: self.to_bp(fields.x + x_off as i64),
-                        y: self.to_bp(fields.y + y_off as i64),
+                        // Offsets come from the file: saturate rather than overflow.
+                        x: self.to_bp(fields.x.saturating_add(x_off as i64)),
+                        y: self.to_bp(fields.y.saturating_add(y_off as i64)),
                         width: self.to_bp(fields.w),
                         height: self.to_bp(fields.h),
                         depth: self.to_bp(fields.d),
@@ -748,5 +749,16 @@ mod tests {
         assert_eq!(resolve_input(root, "../outside.tex"), None);
         assert_eq!(resolve_input(root, "/work/thesis/../etc/passwd"), None);
         assert_eq!(resolve_input(root, "./a/../../x.tex"), None);
+    }
+
+    /// Found by the fuzzer: a huge `Y Offset` overflowed when added to a coordinate.
+    #[test]
+    fn huge_offsets_do_not_overflow() {
+        let text = "SyncTeX Version:1\nInput:1:/w/./main.tex\nOutput:pdf\nMagnification:1000\nUnit:1\n\
+                    X Offset:-9223372036854775807\nY Offset:4306466846268853802\nContent:\n!1\n{1\n\
+                    [1,5:9223372036854775000,9223372036854775000:10,10,0\n]\n}1\nPostamble:\n";
+        let s = SyncTex::parse(text.as_bytes(), Limits::default()).expect("parses");
+        let r = &s.pages()[0].records[0];
+        assert!(r.x.is_finite() && r.y.is_finite());
     }
 }

@@ -120,11 +120,13 @@ impl Normalized {
 
 /// Normalise a complete source file.
 pub fn normalize(src: &str, opts: &Options) -> Normalized {
+    let budget = std::cell::Cell::new(MIN_MACRO_EXPANSION_BYTES.max(4 * src.len()));
     let mut n = Normalizer {
         src,
         opts,
         out: Normalized::default(),
         depth: 0,
+        budget: &budget,
     };
     n.run(0, src.len(), None);
     n.trim_trailing_space();
@@ -133,11 +135,18 @@ pub fn normalize(src: &str, opts: &Options) -> Normalized {
 
 const MAX_MACRO_DEPTH: u32 = 8;
 
+/// Macro body text one file may expand: four times the file's size, and at least
+/// this much. Depth alone does not bound the work: a macro that uses itself several
+/// times grows exponentially with depth. Past the budget, a macro is unknown text.
+const MIN_MACRO_EXPANSION_BYTES: usize = 64 * 1024;
+
 struct Normalizer<'a> {
     src: &'a str,
     opts: &'a Options,
     out: Normalized,
     depth: u32,
+    /// Expansion bytes left, shared by nested normalizers.
+    budget: &'a std::cell::Cell<usize>,
 }
 
 /// How a known command is treated.
@@ -594,7 +603,9 @@ impl Normalizer<'_> {
         }
         if let Some(body) = self.opts.macros.get(&name)
             && self.depth < MAX_MACRO_DEPTH
+            && self.budget.get() >= body.len()
         {
+            self.budget.set(self.budget.get() - body.len());
             let body = body.clone();
             let inner = {
                 let mut sub = Normalizer {
@@ -602,6 +613,7 @@ impl Normalizer<'_> {
                     opts: self.opts,
                     out: Normalized::default(),
                     depth: self.depth + 1,
+                    budget: self.budget,
                 };
                 sub.run(0, body.len(), None);
                 sub.out.chars

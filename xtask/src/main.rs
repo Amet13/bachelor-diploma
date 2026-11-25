@@ -20,6 +20,16 @@ fn main() -> Result<()> {
         Some("wasm") => wasm(&root, "site/app/engine", "no-modules"),
         Some("npm") => wasm(&root, "npm/engine", "nodejs"),
         Some("sample") => sample(&root),
+        Some("bump") => bump(
+            &root,
+            args.get(1).context("usage: cargo xtask bump <X.Y.Z>")?,
+        ),
+        Some("release-check") => release_check(
+            &root,
+            args.get(1)
+                .context("usage: cargo xtask release-check <X.Y.Z>")?
+                .trim_start_matches('v'),
+        ),
         Some("pdfium") => pdfium(
             &root,
             args.iter()
@@ -29,7 +39,7 @@ fn main() -> Result<()> {
         ),
         _ => {
             eprintln!(
-                "usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...] | wasm | npm | sample>"
+                "usage: cargo xtask <schema [--check] | fixtures | pdfium [--platform linux-x64|mac-arm64|...] | wasm | npm | sample | bump <X.Y.Z> | release-check <X.Y.Z>>"
             );
             std::process::exit(2);
         }
@@ -337,5 +347,214 @@ fn sample(root: &Path) -> Result<()> {
         serde_json::to_string_pretty(&expected)?,
     )?;
     println!("wrote {} items to {}", expected.len(), out.display());
+    Ok(())
+}
+
+/// Files that carry the release version, and how to find it in each. The first
+/// `count` matches of `"version": "X"` (JSON) are the package's own version.
+const JSON_VERSION_FILES: &[(&str, usize)] = &[
+    ("npm/package.json", 1),
+    ("integrations/vscode/package.json", 1),
+    ("integrations/vscode/package-lock.json", 2),
+    ("integrations/claude-code/.claude-plugin/plugin.json", 1),
+];
+
+fn is_semver(v: &str) -> bool {
+    let core = v.split(['-', '+']).next().unwrap_or("");
+    let parts: Vec<&str> = core.split('.').collect();
+    parts.len() == 3
+        && parts
+            .iter()
+            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+}
+
+/// The workspace version from the root `Cargo.toml`.
+fn workspace_version(root: &Path) -> Result<String> {
+    let text = std::fs::read_to_string(root.join("Cargo.toml"))?;
+    text.lines()
+        .find_map(|l| {
+            l.strip_prefix("version = \"")
+                .and_then(|r| r.strip_suffix('"'))
+        })
+        .map(str::to_owned)
+        .context("no version in Cargo.toml")
+}
+
+/// Every place the version is written, with the version found there.
+fn versions(root: &Path) -> Result<Vec<(String, String)>> {
+    let mut out = vec![("Cargo.toml".to_owned(), workspace_version(root)?)];
+    for (file, count) in JSON_VERSION_FILES {
+        let text = std::fs::read_to_string(root.join(file)).with_context(|| file.to_string())?;
+        let found: Vec<&str> = text
+            .match_indices("\"version\": \"")
+            .take(*count)
+            .map(|(i, m)| {
+                let rest = &text[i + m.len()..];
+                &rest[..rest.find('"').unwrap_or(0)]
+            })
+            .collect();
+        if found.len() != *count {
+            bail!("{file}: expected {count} version field(s)");
+        }
+        for v in found {
+            out.push(((*file).to_owned(), v.to_owned()));
+        }
+    }
+    for dir in ["crates", "xtask"] {
+        let mut manifests = vec![];
+        if dir == "xtask" {
+            manifests.push(root.join("xtask/Cargo.toml"));
+        } else {
+            for e in std::fs::read_dir(root.join(dir))? {
+                manifests.push(e?.path().join("Cargo.toml"));
+            }
+        }
+        for m in manifests {
+            let text = std::fs::read_to_string(&m)?;
+            for line in text.lines().filter(|l| l.contains("path = \"../")) {
+                if let Some(v) = line
+                    .split("version = \"")
+                    .nth(1)
+                    .and_then(|r| r.split('"').next())
+                {
+                    let rel = m.strip_prefix(root).unwrap_or(&m).display().to_string();
+                    out.push((rel, v.to_owned()));
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Today's date (UTC) as YYYY-MM-DD, without a date library.
+fn today() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let days = i64::try_from(secs / 86_400).unwrap_or(0);
+    // Civil-from-days (Howard Hinnant's algorithm).
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + i64::from(m <= 2);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
+/// Set the version everywhere, refresh Cargo.lock and date the changelog section.
+fn bump(root: &Path, new: &str) -> Result<()> {
+    let new = new.trim_start_matches('v');
+    if !is_semver(new) {
+        bail!("{new} is not a version like 1.2.3");
+    }
+    let old = workspace_version(root)?;
+    let mut touched = 0;
+    for (file, _) in versions(root)?.iter().filter(|(_, v)| *v == old) {
+        let path = root.join(file);
+        let text = std::fs::read_to_string(&path)?;
+        let json_count = JSON_VERSION_FILES
+            .iter()
+            .find(|(f, _)| f == file)
+            .map(|(_, c)| *c);
+        let updated = if let Some(count) = json_count {
+            text.replacen(
+                &format!("\"version\": \"{old}\""),
+                &format!("\"version\": \"{new}\""),
+                count,
+            )
+        } else if file == "Cargo.toml" {
+            text.replacen(
+                &format!("version = \"{old}\""),
+                &format!("version = \"{new}\""),
+                1,
+            )
+        } else {
+            text.replace(
+                &format!("version = \"{old}\", path = \"../"),
+                &format!("version = \"{new}\", path = \"../"),
+            )
+        };
+        if updated != text {
+            std::fs::write(&path, updated)?;
+            touched += 1;
+        }
+    }
+    // Documentation that pins the GitHub Action to a release tag.
+    let action_doc = root.join("docs/github-action.md");
+    let text = std::fs::read_to_string(&action_doc)?;
+    let updated = text.replace(
+        &format!("Amet13/proofback@v{old}"),
+        &format!("Amet13/proofback@v{new}"),
+    );
+    if updated != text {
+        std::fs::write(&action_doc, updated)?;
+        touched += 1;
+    }
+    let changelog = root.join("CHANGELOG.md");
+    let text = std::fs::read_to_string(&changelog).context("CHANGELOG.md")?;
+    if text.contains(&format!("## {new} (")) {
+        println!("CHANGELOG.md already has a {new} section");
+    } else if text.contains("## Unreleased") {
+        std::fs::write(
+            &changelog,
+            text.replacen("## Unreleased", &format!("## {new} ({})", today()), 1),
+        )?;
+    } else {
+        bail!("CHANGELOG.md has no \"## Unreleased\" section to turn into {new}");
+    }
+    let status = Command::new("cargo")
+        .args(["update", "--workspace", "--quiet"])
+        .current_dir(root)
+        .status()?;
+    if !status.success() {
+        bail!("cargo update --workspace failed");
+    }
+    release_check(root, new)?;
+    println!("{old} -> {new}: {touched} files updated. Review, commit, then tag v{new}.");
+    Ok(())
+}
+
+/// Check that every version field and the changelog agree with `version`, and
+/// write that version's changelog section to target/release-notes.md.
+fn release_check(root: &Path, version: &str) -> Result<()> {
+    let wrong: Vec<String> = versions(root)?
+        .into_iter()
+        .filter(|(_, v)| v != version)
+        .map(|(f, v)| format!("{f}: {v}"))
+        .collect();
+    if !wrong.is_empty() {
+        bail!(
+            "these files do not say {version} (run `cargo xtask bump {version}`):\n  {}",
+            wrong.join("\n  ")
+        );
+    }
+    let lock = std::fs::read_to_string(root.join("Cargo.lock"))?;
+    if !lock.contains(&format!(
+        "name = \"proofback-cli\"\nversion = \"{version}\""
+    )) {
+        bail!("Cargo.lock is not at {version}; run `cargo update --workspace`");
+    }
+    let text = std::fs::read_to_string(root.join("CHANGELOG.md")).context("CHANGELOG.md")?;
+    let head = format!("## {version} (");
+    let start = text
+        .find(&head)
+        .with_context(|| format!("CHANGELOG.md has no \"{head}...)\" section"))?;
+    let body_start = text[start..]
+        .find('\n')
+        .map_or(text.len(), |i| start + i + 1);
+    let end = text[body_start..]
+        .find("\n## ")
+        .map_or(text.len(), |i| body_start + i);
+    let notes = text[body_start..end].trim();
+    if notes.is_empty() {
+        bail!("the {version} section of CHANGELOG.md is empty");
+    }
+    std::fs::create_dir_all(root.join("target"))?;
+    std::fs::write(root.join("target/release-notes.md"), format!("{notes}\n"))?;
+    println!("release {version}: versions and changelog agree");
     Ok(())
 }
