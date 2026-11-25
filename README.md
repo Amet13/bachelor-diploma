@@ -7,9 +7,8 @@ Your supervisor, co-author or reviewer marked up the PDF. proofback finds the ex
 caret and note refers to, tracks what you did about it across drafts, and sends the
 answers back: the reviewer's own PDF with a reply on every note, or a response letter.
 
-> **Status: plan final, implementation not started.** Nothing to install yet.
-> Read the plan in [`docs/PLAN.md`](docs/PLAN.md).
-> Website: <https://amet13.github.io/proofback/>
+> **Status: v0.1.0, all planned milestones implemented.** Website and browser app:
+> <https://amet13.github.io/proofback/>. Plan and decision log: [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Why
 
@@ -19,7 +18,26 @@ lose some, and write replies that drift from what changed. Existing tools either
 extract annotations without source locations, jump to one location at a time,
 regenerate your source from Word, or require every reviewer to join a platform.
 
-## What it will look like
+## Install
+
+From a release (Linux and macOS; PowerShell installer for Windows in the release):
+
+```bash
+curl -fsSL https://github.com/Amet13/proofback/releases/latest/download/install.sh | sh
+```
+
+From source (Rust 1.92 or later):
+
+```bash
+cargo install --git https://github.com/Amet13/proofback proofback-cli
+```
+
+Positioned PDF text needs PDFium; the release bundles it. Without it, proofback falls
+back to the text stored in the annotations. No install at all: open the
+[browser app](https://amet13.github.io/proofback/app/), which runs on your machine.
+Node: `npm install proofback`.
+
+## Usage
 
 ```bash
 proofback import review-ch3.pdf --round supervisor-2026-11
@@ -44,26 +62,49 @@ proofback answer -o review-ch3-answered.pdf
   machine; nothing is uploaded. Untrusted PDFs and archives are parsed with limits.
 - **Measured.** Accuracy and performance are checked in CI and published per release.
 
-## Roadmap
+## More inputs
 
-| Version | Scope |
-|---|---|
-| v0.1 | PDF import, anchoring, `list`, `show`, `doctor` |
-| v0.2 | `triage`, `resolve`, `patch`, `apply`, `sync`, answered PDF, response letter |
-| v0.3 | MCP server, agent kit, GitHub Action |
-| v0.4 | Browser app (WebAssembly), npm package |
-| v0.5 | Email notes, optional AI suggestions |
-| v0.6 | Word round trip |
-| v0.7+ | VS Code extension, Typst, schema 1.0 |
+```bash
+proofback import notes-from-email.txt          # "p. 12, para 2: unclear"
+proofback docx export -o thesis.docx           # send to a Word reviewer
+proofback import thesis-reviewed.docx          # tracked changes and comments come back
+proofback import paper.pdf                     # Typst projects work the same way
+```
+
+Agents: `proofback mcp` runs an MCP server on stdio; see [`docs/agents.md`](docs/agents.md)
+and the agent kit in [`integrations/`](integrations/). Pull requests: see
+[`docs/github-action.md`](docs/github-action.md). VS Code: [`integrations/vscode`](integrations/vscode).
+
+## Accuracy
+
+Measured in CI on every pull request (details in [`docs/PLAN.md`](docs/PLAN.md#21-implementation-notes)):
+
+| Input | Exact range | Wrong anchor |
+|---|---|---|
+| Annotated PDF with SyncTeX | 97.8% | 0.4% |
+| Annotated PDF, text only | 43.3% (95.3% correct line) | 0% |
+| Word round trip | 100% | 0% |
+| Typst | 100% | 0% |
+
+A 322-page thesis with 500 notes imports in about 0.3 s.
 
 ## Repository layout
 
 ```
-docs/PLAN.md            the project plan (final), including the audit log
-site/                   website, static, no build step
-tools/                  website checks: HTML validation and a headless smoke test
-.github/workflows/      website check on pull requests, deploy to GitHub Pages
-SECURITY.md             how to report vulnerabilities
+crates/                 Rust workspace: core, CLI, MCP server, WebAssembly bindings
+fixtures/               LaTeX and Typst projects with built PDFs and SyncTeX files
+site/                   website and browser app, static
+npm/                    npm package
+integrations/           agent kit, VS Code extension
+packaging/              installers, Homebrew formula, GitHub Action helper
+docs/                   plan, agent guide, GitHub Action guide
+```
+
+Develop:
+
+```bash
+cargo xtask pdfium
+PROOFBACK_REQUIRE_PDFIUM=1 cargo test --workspace
 ```
 
 Check the website locally:

@@ -2375,7 +2375,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-ai"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "base64 0.23.1",
  "serde",
@@ -2386,7 +2386,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-anchor"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-model",
  "proofback-pdf",
@@ -2397,7 +2397,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-cli"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "clap",
  "proofback-ai",
@@ -2421,7 +2421,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-corpus"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "pdfium-render",
  "proofback-anchor",
@@ -2437,7 +2437,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-docx"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-model",
@@ -2450,7 +2450,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-emit"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-model",
  "proofback-pdf",
@@ -2459,7 +2459,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-mcp"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-emit",
@@ -2471,7 +2471,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-model"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "schemars",
  "serde",
@@ -2482,7 +2482,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-notes"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-model",
@@ -2495,7 +2495,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-pdf"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "lopdf",
  "pdfium-render",
@@ -2505,7 +2505,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-store"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-model",
@@ -2521,7 +2521,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-synctex"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "flate2",
  "thiserror",
@@ -2529,7 +2529,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-tex"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proptest",
  "unicode-normalization",
@@ -2537,7 +2537,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-typst"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofback-anchor",
  "proofback-model",
@@ -2551,7 +2551,7 @@ dependencies = [
 
 [[package]]
 name = "proofback-wasm"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "pdfium-render",
  "proofback-anchor",
@@ -4734,7 +4734,7 @@ checksum = "9440ea3e5aeabb0ac63af70daf835274065238cdd0cec83418f417eae38bacee"
 
 [[package]]
 name = "xtask"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "proofback-corpus",
