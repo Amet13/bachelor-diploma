@@ -26,6 +26,16 @@ the JSON schema is versioned separately (`schema_version` in round files).
   match, and uses the changelog section as the release notes.
 - The VS Code extension package (`.vsix`) is attached to every GitHub Release.
 
+### CI
+
+- The Pages deploy runs in its own job after the site artifact is uploaded. Doing both
+  in one job could race and fail the deploy, as happened on `master`.
+- Runs on `master` are no longer cancelled by a newer push; only superseded
+  pull-request runs are.
+- The fuzz job uses a pinned nightly and a pinned `cargo-fuzz`.
+- Dependabot groups updates into one pull request per ecosystem and now also covers
+  Cargo and the VS Code extension.
+
 ## 0.1.0 (2026-11-25)
 
 First release.

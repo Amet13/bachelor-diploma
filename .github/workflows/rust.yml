@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: rust-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -168,10 +168,11 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # nightly
         with:
-          toolchain: nightly
+          # Pinned so a broken nightly cannot turn CI red; move it forward on purpose.
+          toolchain: nightly-2026-11-01
       - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
-          tool: cargo-fuzz
+          tool: cargo-fuzz@0.13.2
       - name: Fuzz each target for two minutes
         working-directory: fuzz
         env:

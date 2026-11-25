@@ -1,8 +1,27 @@
 version: 2
+# One grouped pull request per ecosystem per week, so updates land together and
+# CI runs once per batch instead of once per package.
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
+  - package-ecosystem: cargo
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      cargo: { patterns: ["*"], update-types: [minor, patch] }
   - package-ecosystem: npm
     directory: /tools
     schedule: { interval: weekly }
+    groups:
+      site-tools: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /integrations/vscode
+    schedule: { interval: weekly }
+    groups:
+      vscode: { patterns: ["*"] }
+    ignore:
+      # The extension's minimum VS Code version; raise it deliberately.
+      - dependency-name: "@types/vscode"
