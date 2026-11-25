@@ -587,8 +587,9 @@ Mapping Word edits back is solved at export time:
 - Releases from a tag through `.github/workflows/release.yml` (see
   [`docs/releasing.md`](releasing.md)): the tag must match every version field and a
   dated `CHANGELOG.md` section; GitHub Release with checksums and provenance, shell and
-  PowerShell installers, Homebrew tap, npm with provenance and the VS Code
-  Marketplace. Registry steps run only when their token is configured.
+  PowerShell installers, the Node package and the VS Code extension as release files,
+  and an optional Homebrew tap. No package registry accounts (npm, Marketplace,
+  crates.io) are used: everything installs from GitHub.
 - Changes are recorded in `CHANGELOG.md` under `## Unreleased` as they land.
 - Licence MIT OR Apache-2.0 (D-11). Fixtures CC BY 4.0. Bundled fonts SIL OFL 1.1.
 - Docs are written for people and agents: each command has a runnable example and
@@ -712,7 +713,7 @@ fetched when the first import starts and then cached: the core is 670 KB and pdf
 | MCP | `rmcp` | Own JSON-RPC over stdio (spec 2025-11-25, older versions negotiated) | Small surface, no async runtime, fully tested |
 | Benchmarks | Criterion, fail on 10% regression | Budget test in CI | Shared runners are too noisy for a 10% threshold |
 | Parallelism | `rayon` | Single pass | Budgets met with large margin; same code path as WebAssembly |
-| Releases | `dist` | Own release workflow | Needed custom steps (pdfium, provenance, Homebrew, npm) |
+| Releases | `dist` | Own release workflow | Needed custom steps (pdfium, provenance, Homebrew, Node and VS Code packages) |
 | Supply chain | `cargo-vet`, Sigstore | `cargo-deny`, GitHub build attestations | Same guarantees with less maintenance |
 | API keys | environment or OS keychain | environment variable named in config | No native keychain dependency |
 | Encodings | `--encoding` flag | Non-UTF-8 sources skipped and reported | Rare in practice; never writes a file it cannot round-trip |
@@ -732,6 +733,6 @@ fetched when the first import starts and then cached: the core is 670 KB and pdf
 | 36 | Portability | Windows checkouts converted fixture line endings | `.gitattributes` keeps fixtures byte-exact; paragraph splitting accepts CRLF |
 | 37 | Supply chain | `zip` advisories in an older version | Upgraded to `zip` 9.7.3; two Typst-only `quick-xml` advisories ignored with reasons |
 | 38 | Release | The Pages deploy shipped `/app` without its engine, and the browser and npm parity tests did not run on pull requests | The Website workflow builds the engine, runs both parity tests on every pull request and deploys the built engine |
-| 39 | Release | Versions were bumped by hand in six files and only the GitHub Release was automated, while the docs promised npm | `cargo xtask bump` and `release-check`; the workflow verifies the tag and publishes to npm, Homebrew and the Marketplace when tokens exist; docs only list channels that work |
+| 39 | Release | Versions were bumped by hand in six files and only the GitHub Release was automated, while the docs promised npm | `cargo xtask bump` and `release-check`; the workflow verifies the tag and attaches the Node package and VS Code extension to the release; no registry accounts needed |
 | 40 | Website | 19 font sizes, about 50 hard-coded colours, 7 weights, decorative filler | One token set for site and app; filler removed |
 

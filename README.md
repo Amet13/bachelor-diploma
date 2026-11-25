@@ -43,6 +43,13 @@ Positioned PDF text needs PDFium; the release bundles it. Without it, proofback 
 back to the text stored in the annotations. No install at all: open the
 [browser app](https://amet13.github.io/proofback/app/), which runs on your machine.
 
+Each [release](https://github.com/Amet13/proofback/releases/latest) also carries the
+VS Code extension (`proofback-vscode.vsix`) and a Node package:
+
+```bash
+npm install https://github.com/Amet13/proofback/releases/latest/download/proofback-node.tgz
+```
+
 ## Usage
 
 ```bash
