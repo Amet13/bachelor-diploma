@@ -2,11 +2,11 @@ name: Release
 
 # Fully automatic; see docs/releasing.md. Nobody tags or builds by hand.
 #
-# - Push to master: if the version in Cargo.toml has no release yet, build and
+# - Push to the default branch: if the version in Cargo.toml has no release yet, build and
 #   publish it (a merged version bump releases itself). Otherwise nothing runs.
 # - Run workflow (Actions, Release) with "bump" set to patch, minor, major or an
 #   exact version: the workflow sets the version everywhere, dates the changelog,
-#   commits that to master and releases it in the same run. With "bump" empty it
+#   commits that to the default branch and releases it in the same run. With "bump" empty it
 #   builds everything as a dry run and publishes nothing.
 #
 # Jobs: prepare (version, checks, optional bump commit), build (archives with the
@@ -16,7 +16,9 @@ name: Release
 
 on:
   push:
-    branches: [master]
+    # Only the repository's default branch publishes (checked below), so a
+    # rename between these two cannot stop releases.
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       bump:
@@ -49,13 +51,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           toolchain: stable
-      - name: Bump the version and commit it to master
+      - name: Bump the version and commit it to the default branch
         if: github.event_name == 'workflow_dispatch' && inputs.bump != ''
         env:
           BUMP: ${{ inputs.bump }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [ "$GITHUB_REF" != "refs/heads/master" ]; then
-            echo "::error::Releases are made from master; run the workflow on master."
+          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Releases are made from $DEFAULT_BRANCH; run the workflow on $DEFAULT_BRANCH."
             exit 1
           fi
           cargo xtask bump "$BUMP"
@@ -63,17 +66,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "Release $v"
-          git push origin HEAD:master
+          git push origin "HEAD:$DEFAULT_BRANCH"
       - name: Decide what to do
         id: decide
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           v="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          if [ "$GITHUB_REF" != "refs/heads/master" ]; then
-            # Only master publishes; elsewhere this is a dry run.
-            cargo xtask release-check "$v" || echo "::warning::v$v is not releasable as is"
+          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            # Only the default branch publishes. A manual run elsewhere is a dry
+            # run; a push to another branch does nothing.
             echo "release=false" >> "$GITHUB_OUTPUT"
+            if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+              echo "build=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            cargo xtask release-check "$v" || echo "::warning::v$v is not releasable as is"
             echo "build=true" >> "$GITHUB_OUTPUT"
             mkdir -p target && [ -f target/release-notes.md ] || echo "Dry run" > target/release-notes.md
             echo "::notice::Dry run on $GITHUB_REF_NAME: builds everything, publishes nothing."
@@ -88,7 +98,7 @@ jobs:
             fi
             mkdir -p target && echo "Dry run" > target/release-notes.md
           else
-            # An unreleased version on master must be releasable; fail loudly if
+            # An unreleased version on the default branch must be releasable; fail loudly if
             # the changelog or a version field disagrees.
             cargo xtask release-check "$v"
             echo "release=true" >> "$GITHUB_OUTPUT"

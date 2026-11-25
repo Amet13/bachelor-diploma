@@ -7,6 +7,10 @@ the JSON schema is versioned separately (`schema_version` in round files).
 
 ### Fixes
 
+- Releases follow the repository's default branch, so the rename from `master` to
+  `main` (or any later one) cannot stop them.
+- PDF reading uses lopdf 0.47, which bounds stream decompression by default and fixes
+  several crashes on malformed files.
 - SyncTeX: a file with a huge `X Offset` or `Y Offset` overflowed when offsets were
   added to coordinates (a panic in debug builds, wrong positions in release builds).
   Found by fuzzing.
@@ -37,7 +41,7 @@ the JSON schema is versioned separately (`schema_version` in round files).
   binary before uploading it.
 - Releases are automatic. From the GitHub website, run the Release workflow with
   patch, minor, major or an exact version: it bumps every version field, dates the
-  changelog, commits to `master`, builds, tags and publishes. Merging a version bump
+  changelog, commits to the default branch (`main`), builds, tags and publishes. Merging a version bump
   releases it too. Nothing is tagged or built by hand.
 - `cargo xtask bump <patch|minor|major|X.Y.Z>` and `cargo xtask release-check` back
   this up locally; the release notes come from the changelog.
@@ -45,8 +49,8 @@ the JSON schema is versioned separately (`schema_version` in round files).
 ### CI
 
 - The Pages deploy runs in its own job after the site artifact is uploaded. Doing both
-  in one job could race and fail the deploy, as happened on `master`.
-- Runs on `master` are no longer cancelled by a newer push; only superseded
+  in one job could race and fail the deploy.
+- Runs on the main branch are no longer cancelled by a newer push; only superseded
   pull-request runs are.
 - Fuzzing on pull requests is deterministic (fixed seed and run count, 10-second limit
   per input), so it fails only for a bug the change can reproduce. Random fuzzing runs
