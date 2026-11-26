@@ -13,9 +13,10 @@ From the GitHub website:
    `minor`, `major` or an exact version such as `1.0.0`.
 
 The workflow then sets the version in every manifest and `Cargo.lock`, turns
-`## Unreleased` into `## 1.0.0 (date)` (leaving a fresh `## Unreleased` above it),
-commits that to `main` as "Release 1.0.0", builds everything, tags `v1.0.0` and
-publishes the GitHub Release with that changelog section as its notes.
+`## Unreleased` into `## 1.0.0 (date)` (leaving a fresh `## Unreleased` above it) and
+commits that to `main` as "Release 1.0.0". It then starts a second Release run on
+`main`, which builds that commit, tags `v1.0.0` and publishes the GitHub Release with
+the changelog section as its notes. Each run builds only the commit it started on.
 
 Merging a pull request that changes the version (for example one made with
 `cargo xtask bump minor`) releases it the same way: on every push to `main` the
@@ -58,8 +59,9 @@ notice and the formula is still attached to the release.
 
 ## Checking a release without publishing
 
-Run the Release workflow with **bump** left empty, on any branch. It builds every
-file and runs the checks but publishes nothing.
+Run the Release workflow with **bump** left empty, on any branch other than `main`,
+or on `main` when the current version is already released. It builds every file and
+runs the checks but publishes nothing.
 
 ## Requirements
 

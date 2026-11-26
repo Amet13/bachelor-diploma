@@ -6,8 +6,10 @@ name: Release
 #   publish it (a merged version bump releases itself). Otherwise nothing runs.
 # - Run workflow (Actions, Release) with "bump" set to patch, minor, major or an
 #   exact version: the workflow sets the version everywhere, dates the changelog,
-#   commits that to the default branch and releases it in the same run. With "bump" empty it
-#   builds everything as a dry run and publishes nothing.
+#   commits that to the default branch, then starts a fresh run of itself on that
+#   branch, which releases the new commit. With "bump" empty it releases the current
+#   version if it is not released yet, and otherwise builds everything as a dry run.
+#   Every job checks out the commit its run started on, never a computed ref.
 #
 # Jobs: prepare (version, checks, optional bump commit), build (archives with the
 # pinned PDFium, checksums, signed provenance, Linux for glibc 2.17), vsix, node,
@@ -22,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Release a new version: patch, minor, major or an exact version such as 1.2.3. Leave empty for a dry run that publishes nothing."
+        description: "Release a new version: patch, minor, major or an exact version such as 1.2.3. Leave empty to release the current version if it has no release yet, otherwise to build everything as a dry run."
         required: false
         default: ""
 
@@ -39,9 +41,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+      actions: write
     outputs:
       version: ${{ steps.decide.outputs.version }}
-      sha: ${{ steps.decide.outputs.sha }}
       release: ${{ steps.decide.outputs.release }}
       build: ${{ steps.decide.outputs.build }}
     steps:
@@ -51,11 +53,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           toolchain: stable
-      - name: Bump the version and commit it to the default branch
+      - name: Bump the version, commit it and start the release run
+        id: bump
         if: github.event_name == 'workflow_dispatch' && inputs.bump != ''
         env:
           BUMP: ${{ inputs.bump }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
             echo "::error::Releases are made from $DEFAULT_BRANCH; run the workflow on $DEFAULT_BRANCH."
@@ -67,14 +71,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "Release $v"
           git push origin "HEAD:$DEFAULT_BRANCH"
+          # A push made with the built-in token starts no workflows, but a manual
+          # dispatch does: the new run checks out the bump commit and releases it.
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
+          echo "::notice::Committed v$v; a new Release run on $DEFAULT_BRANCH publishes it."
+          echo "dispatched=true" >> "$GITHUB_OUTPUT"
       - name: Decide what to do
         id: decide
+        if: steps.bump.outputs.dispatched != 'true'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           v="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
           echo "version=$v" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
             # Only the default branch publishes. A manual run elsewhere is a dry
             # run; a push to another branch does nothing.
@@ -136,7 +145,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
@@ -206,7 +214,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -233,7 +240,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
@@ -277,7 +283,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -296,7 +301,7 @@ jobs:
             packaging/install.sh
             packaging/install.ps1
           tag_name: v${{ needs.prepare.outputs.version }}
-          target_commitish: ${{ needs.prepare.outputs.sha }}
+          target_commitish: ${{ github.sha }}
           name: v${{ needs.prepare.outputs.version }}
           body_path: notes/release-notes.md
           prerelease: ${{ contains(needs.prepare.outputs.version, '-') }}
